@@ -7,9 +7,11 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="rdmaChannel" />
+        <module name="RdmaChannel" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="RdmaChannel" target="1.8" />
       <module name="rdmaChannel" target="1.8" />
     </bytecodeTargetLevel>
   </component>

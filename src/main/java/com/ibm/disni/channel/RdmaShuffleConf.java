@@ -45,6 +45,8 @@ public class RdmaShuffleConf {
 
     private String serverHost="10.10.0.25";
 
+    private String cpuList ="";
+
     public boolean useOdp(IbvContext context) {
         int rcOdpCaps = 0;
         try {
@@ -132,4 +134,6 @@ public class RdmaShuffleConf {
     public void setPort(int port) {
         this.port = port;
     }
+
+    public String cpuList(){return cpuList;}
 }

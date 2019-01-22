@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-package com.ibm.disni.channel;
+package com.ibm.disni.mr;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,7 +28,7 @@ public class RdmaRegisteredBuffer {
   private int blockOffset = 0;
 
   public RdmaRegisteredBuffer(RdmaBufferManager rdmaBufferManager, int length)
-      throws IOException {
+          throws IOException {
     this.rdmaBufferManager = rdmaBufferManager;
     this.rdmaBuffer = rdmaBufferManager.get(length);
     assert this.rdmaBuffer != null;
@@ -75,23 +74,10 @@ public class RdmaRegisteredBuffer {
       throw new IllegalArgumentException("Exceeded Registered Length!");
     }
 
-    Class<?> classDirectByteBuffer;
-    try {
-      classDirectByteBuffer = Class.forName("java.nio.DirectByteBuffer");
-    } catch (ClassNotFoundException e) {
-      throw new IOException("java.nio.DirectByteBuffer class not found");
-    }
-    Constructor<?> constructor;
-    try {
-      constructor = classDirectByteBuffer.getDeclaredConstructor(long.class, int.class);
-    } catch (NoSuchMethodException e) {
-      throw new IOException("java.nio.DirectByteBuffer constructor not found");
-    }
-    constructor.setAccessible(true);
     ByteBuffer byteBuffer;
     try {
-      byteBuffer = (ByteBuffer)constructor.newInstance(
-        getRegisteredAddress() + (long)blockOffset, length);
+      byteBuffer = (ByteBuffer)RdmaBuffer.directBufferConstructor.newInstance(
+              getRegisteredAddress() + (long)blockOffset, length);
       blockOffset += length;
     } catch (Exception e) {
       throw new IOException("java.nio.DirectByteBuffer exception: " + e.toString());

@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package com.ibm.disni.channel;
+package com.ibm.disni.mr;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
-class ByteBufferBackedOutputStream extends OutputStream {
+public class ByteBufferBackedOutputStream extends OutputStream {
   private final ByteBuffer buf;
 
   ByteBufferBackedOutputStream(ByteBuffer buf) {

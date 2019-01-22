@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-package com.ibm.disni.channel;
+package com.ibm.disni.mr;
+
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +24,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 public final class RdmaByteBufferManagedBuffer extends RdmaManagedBuffer {
-  private final RdmaRegisteredBuffer rdmaRegisteredBuffer;
+  private final com.ibm.disni.mr.RdmaRegisteredBuffer rdmaRegisteredBuffer;
   private ByteBuffer byteBuffer;
 
   public RdmaByteBufferManagedBuffer(RdmaRegisteredBuffer rdmaRegisteredBuffer, int length)
@@ -54,7 +55,7 @@ public final class RdmaByteBufferManagedBuffer extends RdmaManagedBuffer {
   }
 
   @Override
-  public ManagedBuffer retain() {
+  public com.ibm.disni.mr.ManagedBuffer retain() {
     rdmaRegisteredBuffer.retain();
     return this;
   }

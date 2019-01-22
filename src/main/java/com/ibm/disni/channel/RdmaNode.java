@@ -17,6 +17,7 @@
 
 package com.ibm.disni.channel;
 
+import com.ibm.disni.mr.RdmaBufferManager;
 import com.ibm.disni.rdma.verbs.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,10 +25,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -51,12 +52,14 @@ public class RdmaNode {
   private Thread listeningThread;
   private IbvPd ibvPd;// ibv 保护域 用来注册内存用
   private InetSocketAddress localInetSocketAddress;
-
-  private static final ExecutorService executorService = Executors.newCachedThreadPool();
+  private final ArrayList<Integer> cpuArrayList = new ArrayList<>();
+  private int cpuIndex = 0;
+  private final RdmaCompletionListener receiveListener;
 
   public RdmaNode(String hostName, boolean isClient, final RdmaShuffleConf conf,
-                  final RdmaCompletionListener receiveListener, final RdmaAcceptListener rdmaAcceptListener) throws Exception {
+                  final RdmaCompletionListener receiveListener) throws Exception {
     this.conf = conf;
+    this.receiveListener=receiveListener;
 
     try {
       cmChannel = RdmaEventChannel.createEventChannel();
@@ -88,6 +91,8 @@ public class RdmaNode {
         throw new IOException("Failed to bind. Make sure your NIC supports RDMA");
       }
 
+      initCpuArrayList();
+
       err = listenerRdmaCmId.listen(BACKLOG);
       if (err != 0) {
         throw new IOException("Failed to start listener: " + err);
@@ -112,7 +117,6 @@ public class RdmaNode {
       throw ule;
     }
 
-    if(!isClient){
       listeningThread = new Thread(() -> {
         logger.info("Starting RdmaNode Listening Server, listening on: " + localInetSocketAddress);
 
@@ -150,8 +154,7 @@ public class RdmaNode {
               }
 
               RdmaChannel.RdmaChannelType rdmaChannelType;
-              rdmaChannelType = RdmaChannel.RdmaChannelType.RDMA_READ_RESPONDER;
-              //rdmaChannelType = RdmaChannel.RdmaChannelType.RPC_RESPONDER;
+              rdmaChannelType = RdmaChannel.RdmaChannelType.RPC;
 
               rdmaChannel = new RdmaChannel(rdmaChannelType, conf, rdmaBufferManager, receiveListener,
                       cmId, getNextCpuVector());
@@ -160,7 +163,13 @@ public class RdmaNode {
                 rdmaChannel.stop();
                 continue;
               }
-              passiveRdmaInetSocketMap.put(inetSocketAddress.getAddress().getHostAddress(),inetSocketAddress);
+
+              if (!isClient) {
+                RdmaChannel previous = activeRdmaChannelMap.put(inetSocketAddress, rdmaChannel);
+                if (previous != null) {
+                  previous.stop();
+                }
+              }
 
               try {
                 rdmaChannel.accept();
@@ -188,7 +197,7 @@ public class RdmaNode {
                 rdmaChannel.stop();
               } else {
                 logger.info(" rdmaChannel finalizeConnection");
-                rdmaChannel.finalizeConnection(rdmaAcceptListener,inetSocketAddress.getAddress().getHostAddress());
+                rdmaChannel.finalizeConnection();
               }
             } else if (eventType == RdmaCmEvent.EventType.RDMA_CM_EVENT_DISCONNECTED.ordinal()) {
               RdmaChannel rdmaChannel = passiveRdmaChannelMap.remove(inetSocketAddress);
@@ -214,17 +223,73 @@ public class RdmaNode {
 
       listeningThread.setDaemon(true);
       listeningThread.start();
-    }
+
     runThread.set(true);
   }
 
+  private void initCpuArrayList() throws IOException {
+    logger.info("cpuList from configuration file: {}", conf.cpuList());
+
+    java.util.function.Consumer<Integer> addCpuToList = (cpu) -> {
+      // Add CPUs to the list while shuffling the order of the list,
+      // so that multiple RdmaNodes on this machine will have a better change
+      // to getRdmaBlockLocation different CPUs assigned to them
+      cpuArrayList.add(
+              cpuArrayList.isEmpty() ? 0 : new Random().nextInt(cpuArrayList.size()),
+              cpu);
+    };
+
+    final int maxCpu = Runtime.getRuntime().availableProcessors() - 1;
+    final int maxUsableCpu = Math.min(Runtime.getRuntime().availableProcessors(),
+            listenerRdmaCmId.getVerbs().getNumCompVectors()) - 1;
+    if (maxUsableCpu < maxCpu - 1) {
+      logger.warn("IbvContext supports only " + (maxUsableCpu + 1) + " CPU cores, while there are" +
+              " " + (maxCpu + 1) + " CPU cores in the system. This may lead to under-utilization of the" +
+              " system's CPU cores. This limitation may be adjustable in the RDMA device configuration.");
+    }
+
+    for (String cpuRange : conf.cpuList().split(",")) {
+      final String[] cpuRangeArray = cpuRange.split("-");
+      int cpuStart, cpuEnd;
+
+      try {
+        cpuStart = cpuEnd = Integer.parseInt(cpuRangeArray[0].trim());
+        if (cpuRangeArray.length > 1) {
+          cpuEnd = Integer.parseInt(cpuRangeArray[1].trim());
+        }
+
+        if (cpuStart > cpuEnd || cpuEnd > maxCpu) {
+          logger.warn("Invalid cpuList!  start: {}, end: {}, max: {}", cpuStart, cpuEnd, maxCpu);
+          throw new NumberFormatException();
+        }
+      } catch (NumberFormatException e) {
+        logger.info("Empty or failure parsing the cpuList. Defaulting to all available CPUs");
+        cpuArrayList.clear();
+        break;
+      }
+
+      for (int cpu = cpuStart; cpu <= Math.min(maxUsableCpu, cpuEnd); cpu++) {
+        addCpuToList.accept(cpu);
+      }
+    }
+
+    if (cpuArrayList.isEmpty()) {
+      for (int cpu = 0; cpu <= maxUsableCpu; cpu++) {
+        addCpuToList.accept(cpu);
+      }
+    }
+
+    logger.info("Using cpuList: {}", cpuArrayList);
+  }
+
   private int getNextCpuVector() {
-    return 0;
+    return cpuArrayList.get(cpuIndex++ % cpuArrayList.size());
   }
 
   public RdmaBufferManager getRdmaBufferManager() { return rdmaBufferManager; }
 
-  public RdmaChannel getRdmaChannel(InetSocketAddress remoteAddr, boolean mustRetry)
+  public RdmaChannel getRdmaChannel(InetSocketAddress remoteAddr, boolean mustRetry,
+                                    RdmaChannel.RdmaChannelType rdmaChannelType)
       throws IOException, InterruptedException {
     final long startTime = System.nanoTime();
     final int maxConnectionAttempts = conf.maxConnectionAttempts();
@@ -236,13 +301,13 @@ public class RdmaNode {
     do {
       rdmaChannel = activeRdmaChannelMap.get(remoteAddr);
       if (rdmaChannel == null) {
-
-        RdmaChannel.RdmaChannelType rdmaChannelType;
-        rdmaChannelType = RdmaChannel.RdmaChannelType.RDMA_READ_REQUESTOR;
-        //rdmaChannelType = RdmaChannel.RdmaChannelType.RPC_REQUESTOR;
-
-        rdmaChannel = new RdmaChannel(rdmaChannelType, conf, rdmaBufferManager, null,
-          getNextCpuVector());
+        RdmaCompletionListener listener = null;
+        if (rdmaChannelType == RdmaChannel.RdmaChannelType.RPC) {
+          // Executor <-> Driver rdma channels need listener on both sides.
+          listener = receiveListener;
+        }
+        rdmaChannel = new RdmaChannel(rdmaChannelType, conf, rdmaBufferManager, listener,
+                getNextCpuVector());
 
         RdmaChannel actualRdmaChannel = activeRdmaChannelMap.putIfAbsent(remoteAddr, rdmaChannel);
         if (actualRdmaChannel != null) {
@@ -251,20 +316,19 @@ public class RdmaNode {
           try {
             rdmaChannel.connect(remoteAddr);
             logger.info("Established connection to " + remoteAddr + " in " +
-              (System.nanoTime() - startTime) / 1000000 + " ms");
+                    (System.nanoTime() - startTime) / 1000000 + " ms");
           } catch (IOException e) {
             ++connectionAttempts;
             activeRdmaChannelMap.remove(remoteAddr, rdmaChannel);
             rdmaChannel.stop();
-            logger.error("aaaaaaaa");
             if (mustRetry) {
               if (connectionAttempts == maxConnectionAttempts) {
                 logger.error("Failed to connect to " + remoteAddr + " after " +
-                  maxConnectionAttempts + " attempts, aborting");
+                        maxConnectionAttempts + " attempts, aborting");
                 throw e;
               } else {
                 logger.error("Failed to connect to " + remoteAddr + ", attempt " +
-                  connectionAttempts + " of " + maxConnectionAttempts + " with exception: " + e);
+                        connectionAttempts + " of " + maxConnectionAttempts + " with exception: " + e);
                 continue;
               }
             } else {
@@ -307,7 +371,7 @@ public class RdmaNode {
     }, null);
 
     // TODO: Use our own ExecutorService in Java
-    executorService.execute(futureTask);
+    ExecutorsServiceContext.getInstance().execute(futureTask);
     return futureTask;
   }
 

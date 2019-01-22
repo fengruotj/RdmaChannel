@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.ibm.disni.channel;
+package com.ibm.disni.mr;
 
 import java.io.IOException;
 import java.io.InputStream;
