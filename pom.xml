@@ -48,25 +48,6 @@
     </plugin>
 
     <plugin>
-      <artifactId>maven-assembly-plugin</artifactId>
-      <executions>
-        <execution>
-          <id>jar-with-dependencies</id>
-          <phase>package</phase>
-          <goals>
-            <goal>single</goal>
-          </goals>
-          <configuration>
-            <descriptorRefs>
-              <descriptorRef>jar-with-dependencies</descriptorRef>
-            </descriptorRefs>
-          </configuration>
-        </execution>
-      </executions>
-    </plugin>
-
-
-    <plugin>
       <groupId>org.sonatype.plugins</groupId>
       <artifactId>nexus-staging-maven-plugin</artifactId>
       <version>1.6.7</version>

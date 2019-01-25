@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Properties;
 
 /**
  * locate org.apache.storm.messaging.rdma
@@ -12,6 +13,7 @@ import java.io.IOException;
  */
 public class RdmaChannelConf {
     private static final Logger logger = LoggerFactory.getLogger(RdmaChannelConf.class);
+    private static Properties properties=new Properties();
 
     private boolean swFlowControl=false;
 

@@ -107,7 +107,7 @@ public class RdmaBufferManager {
 
   public RdmaBufferManager(IbvPd pd, boolean isExecutor, RdmaChannelConf conf) throws IOException {
     this.pd = pd;
-    this.minimumAllocationSize = Math.min(4096, MIN_BLOCK_SIZE);
+    this.minimumAllocationSize = Math.min(1024, MIN_BLOCK_SIZE);
     this.maxCacheSize = conf.maxBufferAllocationSize();
     if (conf.useOdp(pd.getContext())) {
       useOdp = true;

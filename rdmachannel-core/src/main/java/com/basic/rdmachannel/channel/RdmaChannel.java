@@ -33,7 +33,7 @@ public class RdmaChannel {
     private final ConcurrentHashMap<Integer, ConcurrentLinkedDeque<SVCPostRecv>> svcPostRecvCache =
             new ConcurrentHashMap();
 
-    public enum RdmaChannelType { RPC, RDMA_READ_REQUESTOR, RDMA_READ_RESPONDER }
+    public enum RdmaChannelType { RPC, RDMA_READ_REQUESTOR, RDMA_READ_RESPONDER,RDMA_WRITE_REQUESTOR,RDMA_WRITE_RESPONDER}
     private final RdmaChannelType rdmaChannelType;
 
     private final RdmaBufferManager rdmaBufferManager;
@@ -175,11 +175,28 @@ public class RdmaChannel {
                 this.recvBudgetSemaphore = new Semaphore(recvDepth,false);
                 break;
 
-            case RDMA_READ_RESPONDER:
-                // Doesn't require receives
-                this.recvDepth = 0;
+            case RDMA_WRITE_REQUESTOR:
+                // Requires sends and receives
+                this.recvDepth = conf.recvQueueDepth();
                 this.sendDepth = conf.sendQueueDepth();
                 this.sendBudgetSemaphore = new Semaphore(sendDepth - RECV_CREDIT_REPORT_RATIO, false);
+                this.recvBudgetSemaphore = new Semaphore(recvDepth,false);
+                break;
+
+            case RDMA_WRITE_RESPONDER:
+                // Requires sends and receives
+                this.recvDepth = conf.recvQueueDepth();
+                this.sendDepth = conf.sendQueueDepth();
+                this.sendBudgetSemaphore = new Semaphore(sendDepth - RECV_CREDIT_REPORT_RATIO, false);
+                this.recvBudgetSemaphore = new Semaphore(recvDepth,false);
+                break;
+
+            case RDMA_READ_RESPONDER:
+                // Requires sends and receives
+                this.recvDepth = conf.recvQueueDepth();
+                this.sendDepth = conf.sendQueueDepth();
+                this.sendBudgetSemaphore = new Semaphore(sendDepth - RECV_CREDIT_REPORT_RATIO, false);
+                this.recvBudgetSemaphore = new Semaphore(recvDepth,false);
                 break;
 
             default:
@@ -622,8 +639,8 @@ public class RdmaChannel {
         }
     }
 
-    public void rdmaSendInQueue(RdmaCompletionListener listener, long[] localAddresses, int[] lKeys,
-                                int[] sizes) throws IOException {
+    public void rdmaSendInQueue(RdmaCompletionListener listener, long[] localAddresses,
+                                int[] sizes,  int[] lKeys) throws IOException {
         LinkedList<IbvSendWR> sendWRList = new LinkedList<>();
         for (int i = 0; i < localAddresses.length; i++) {
             IbvSge sendSge = new IbvSge();
@@ -654,8 +671,8 @@ public class RdmaChannel {
     }
 
     // TODO RDMA ReceiveInQueue
-    public void rdmaReceiveInQueue(RdmaCompletionListener listener, long localAddresses, int lKeys,
-                                   int length) throws Exception{
+    public void rdmaReceiveInQueue(RdmaCompletionListener listener, long localAddresses,
+                                   int length, int lKeys) throws Exception{
         LinkedList<IbvRecvWR> recvWrList = new LinkedList<>();
 
         IbvSge sge = new IbvSge();

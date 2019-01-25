@@ -1,4 +1,4 @@
-package com.basic.rdmachannel;
+package com.basic.rdmachannel.read;
 
 import com.basic.rdmachannel.channel.*;
 import com.basic.rdmachannel.mr.RdmaBuffer;
@@ -12,13 +12,13 @@ import java.nio.ByteBuffer;
 /**
  * locate com.ibm.disni.channel
  * Created by MasterTj on 2019/1/22.
- * java -cp rdmachannel-example-1.0-SNAPSHOT-jar-with-dependencies.jar com.basic.rdmachannel.RdmaSendClient
+ * java -cp rdmachannel-example-1.0-SNAPSHOT-jar-with-dependencies.jar com.basic.rdmachannel.read.RdmaReadClient
  */
-public class RdmaSendClient {
-    private static final Logger logger = LoggerFactory.getLogger(RdmaSendClient.class);
+public class RdmaReadClient {
+    private static final Logger logger = LoggerFactory.getLogger(RdmaReadClient.class);
 
     public static void main(String[] args) throws Exception {
-        RdmaNode rdmaClient=new RdmaNode("10.10.0.24", true, new RdmaChannelConf(), RdmaChannel.RdmaChannelType.RPC, new RdmaConnectListener() {
+        RdmaNode rdmaClient=new RdmaNode("10.10.0.24", true, new RdmaChannelConf(), RdmaChannel.RdmaChannelType.RDMA_READ_RESPONDER, new RdmaConnectListener() {
             @Override
             public void onSuccess(RdmaChannel rdmaChannel) {
                 logger.info("success connect");
@@ -30,14 +30,20 @@ public class RdmaSendClient {
             }
         });
 
-        RdmaChannel rdmaChannel = rdmaClient.getRdmaChannel(new InetSocketAddress("10.10.0.25", 1955), true, RdmaChannel.RdmaChannelType.RPC);
+        RdmaChannel rdmaChannel = rdmaClient.getRdmaChannel(new InetSocketAddress("10.10.0.25", 1955), true, RdmaChannel.RdmaChannelType.RDMA_READ_RESPONDER);
 
         RdmaBufferManager rdmaBufferManager = rdmaClient.getRdmaBufferManager();
-        RdmaBuffer rdmaBuffer = rdmaBufferManager.get(1024);
-        ByteBuffer byteBuffer = rdmaBuffer.getByteBuffer();
+        RdmaBuffer rdmaData = rdmaBufferManager.get(4096);
+        ByteBuffer dataBuffer = rdmaData.getByteBuffer();
         String str="Hello! I am Client!";
-        byteBuffer.asCharBuffer().put(str);
-        byteBuffer.flip();
+        dataBuffer.asCharBuffer().put(str);
+        dataBuffer.flip();
+
+        RdmaBuffer rdmaSend = rdmaBufferManager.get(1024);
+        ByteBuffer sendBuffer = rdmaSend.getByteBuffer();
+        sendBuffer.putLong(rdmaData.getAddress());
+        sendBuffer.putInt(rdmaData.getLkey());
+        sendBuffer.putInt(rdmaData.getLength());
 
         rdmaChannel.rdmaSendInQueue(new RdmaCompletionListener() {
             @Override
@@ -49,7 +55,7 @@ public class RdmaSendClient {
             public void onFailure(Throwable exception) {
 
             }
-        },new long[]{rdmaBuffer.getAddress()},new int[]{rdmaBuffer.getLkey()},new int[]{rdmaBuffer.getLength()});
+        },new long[]{rdmaSend.getAddress()},new int[]{rdmaSend.getLength()},new int[]{rdmaSend.getLkey()});
 
         Thread.sleep(Integer.MAX_VALUE);
     }

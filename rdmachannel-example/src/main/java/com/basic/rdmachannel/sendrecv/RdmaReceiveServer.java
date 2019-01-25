@@ -1,4 +1,4 @@
-package com.basic.rdmachannel;
+package com.basic.rdmachannel.sendrecv;
 
 
 import com.basic.rdmachannel.channel.*;
@@ -13,7 +13,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * locate com.ibm.disni.channel
  * Created by MasterTj on 2019/1/22.
- * java -cp rdmachannel-example-1.0-SNAPSHOT-jar-with-dependencies.jar com.basic.rdmachannel.RdmaReceiveServer
+ * java -cp rdmachannel-example-1.0-SNAPSHOT-jar-with-dependencies.jar com.basic.rdmachannel.sendrecv.RdmaReceiveServer
  */
 public class RdmaReceiveServer implements RdmaConnectListener {
     private static final Logger logger = LoggerFactory.getLogger(RdmaReceiveServer.class);
@@ -32,14 +32,14 @@ public class RdmaReceiveServer implements RdmaConnectListener {
             @Override
             public void onSuccess(ByteBuffer buf) {
                 logger.info("success excute receive request!");
-                logger.info("RdmaReceiveServer receive msg from client: "+byteBuffer.asCharBuffer().toString());
+                logger.info("RdmaWriteServer receive msg from client: "+byteBuffer.asCharBuffer().toString());
             }
 
             @Override
             public void onFailure(Throwable exception) {
 
             }
-        },rdmaBuffer.getAddress(),rdmaBuffer.getLkey(),rdmaBuffer.getLength());
+        },rdmaBuffer.getAddress(),rdmaBuffer.getLength(),rdmaBuffer.getLkey());
 
         Thread.sleep(Integer.MAX_VALUE);
     }
