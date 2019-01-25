@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/RdmaChannel.iml" filepath="$PROJECT_DIR$/RdmaChannel.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rdmachannel-core/rdmachannel-core.iml" filepath="$PROJECT_DIR$/rdmachannel-core/rdmachannel-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rdmachannel-example/rdmachannel-example.iml" filepath="$PROJECT_DIR$/rdmachannel-example/rdmachannel-example.iml" />
     </modules>
   </component>
 </project>

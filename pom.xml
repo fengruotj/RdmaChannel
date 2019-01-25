@@ -4,9 +4,14 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.basic.disni</groupId>
-  <artifactId>rdmaChannel</artifactId>
+  <groupId>com.basic.rdmachannel</groupId>
+  <artifactId>rdmachannel-project</artifactId>
+  <packaging>pom</packaging>
   <version>1.0-SNAPSHOT</version>
+  <modules>
+    <module>rdmachannel-core</module>
+    <module>rdmachannel-example</module>
+  </modules>
 
   <name>RdmaChannel</name>
   <!-- FIXME change it to the project's website -->
@@ -17,12 +22,6 @@
   </properties>
 
   <dependencies>
-
-    <dependency>
-      <groupId>com.ibm.disni</groupId>
-      <artifactId>disni</artifactId>
-      <version>1.6</version>
-    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

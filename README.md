@@ -1,4 +1,4 @@
-# rdmaChannel
+# RdmaChannel
 RDMA Channel:A Channel-Oriented RDMA Java Communication Library. More high-level abstract Channel API on top of RDMA verbs.
 
 1. rdmaWriteInQueue operation
