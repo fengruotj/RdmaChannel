@@ -5,3 +5,4 @@ RDMA Channel:A Channel-Oriented RDMA Java Communication Library. More high-level
 2. rdmaSendInQueue operation
 3. rdmaSendWithImm operation
 4. rdmaReadInQueue operation
+5. rdmaChannel stop operation
