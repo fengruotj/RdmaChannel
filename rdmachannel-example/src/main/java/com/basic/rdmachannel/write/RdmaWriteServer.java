@@ -39,7 +39,7 @@ public class RdmaWriteServer implements RdmaConnectListener {
 
         clientChannel.rdmaSendInQueue(new RdmaCompletionListener() {
             @Override
-            public void onSuccess(ByteBuffer buf) {
+            public void onSuccess(ByteBuffer buf, Integer IMM) {
                 System.out.println("SEND Success!!!");
                 try {
                     cyclicBarrier.await();

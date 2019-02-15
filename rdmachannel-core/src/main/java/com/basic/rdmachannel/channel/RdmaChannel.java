@@ -699,7 +699,7 @@ public class RdmaChannel {
     }
 
     // Used only for sending a receive credit report
-    private void rdmaSendWithImm(int immData) throws IOException {
+    public void rdmaSendWithImm(int immData) throws IOException {
         LinkedList<IbvSendWR> sendWRList = new LinkedList<>();
         LinkedList<IbvSge> sendSgeList = new LinkedList<>();
         IbvSendWR sendWr = new IbvSendWR();
@@ -711,6 +711,21 @@ public class RdmaChannel {
         sendWRList.add(sendWr);
 
         rdmaPostSendWRList(sendWRList);
+    }
+
+    public void rdmaRecvWithImm(RdmaCompletionListener listener) throws IOException {
+        LinkedList<IbvRecvWR> recvWrList = new LinkedList<>();
+        IbvRecvWR recvWR = new IbvRecvWR();
+        recvWrList.add(recvWR);
+        int completionInfoId = putCompletionInfo(new CompletionInfo(listener, 1));
+        recvWR.setWr_id(completionInfoId);
+
+        try {
+            rdmaPostWRListInQueue(new PendingReceive(recvWrList, recvWrList.size()));
+        } catch (Exception e) {
+            removeCompletionInfo(completionInfoId);
+            throw e;
+        }
     }
 
     // TODO delete Recvs code
@@ -817,7 +832,7 @@ public class RdmaChannel {
                             CompletionInfo completionInfo = removeCompletionInfo(completionInfoId);
                             if (completionInfo != null) {
                                 if (wcSuccess) {
-                                    completionInfo.listener.onSuccess(null);
+                                    completionInfo.listener.onSuccess(null,null);
                                 } else {
                                     completionInfo.listener.onFailure(
                                             new IOException("RDMA Send/Write/Read WR completed with error: " +
@@ -839,7 +854,7 @@ public class RdmaChannel {
                             CompletionInfo completionInfo = removeCompletionInfo(recvWrId);
                             if (completionInfo != null) {
                                 if (wcSuccess) {
-                                    completionInfo.listener.onSuccess(null);
+                                    completionInfo.listener.onSuccess(null,null);
                                 } else {
                                     completionInfo.listener.onFailure(
                                             new IOException(this + "RDMA Receive WR completed with error: " +
@@ -854,15 +869,38 @@ public class RdmaChannel {
                         }
                     } else if (ibvWCs[i].getOpcode() ==
                             IbvWC.IbvWcOpcode.IBV_WC_RECV_RDMA_WITH_IMM.getOpcode()) {
-                        // Receive credit report - update new credits
-                        if (remoteRecvCredits != null) {
-                            remoteRecvCredits.release(ibvWCs[i].getImm_data());
+                        //TODO Software-level flow control enabled can't use sendIMM
+                        if (conf.swFlowControl()){
+                            // Receive credit report - update new credits
+                            if (remoteRecvCredits != null) {
+                                remoteRecvCredits.release(ibvWCs[i].getImm_data());
+                            }
+                            int recvWrId = (int)ibvWCs[i].getWr_id();
+                            if (firstRecvWrIndex == -1) {
+                                firstRecvWrIndex = recvWrId;
+                            }
+                            reclaimedRecvWrs += 1;
+                        }else {
+                            //Software-level flow control is disabled
+                            int recvWrId = (int)ibvWCs[i].getWr_id();
+                            if (recvWrId != NOOP_RESERVED_INDEX) {
+                                CompletionInfo completionInfo = removeCompletionInfo(recvWrId);
+                                if (completionInfo != null) {
+                                    if (wcSuccess) {
+                                        completionInfo.listener.onSuccess(null, ibvWCs[i].getImm_data());
+                                    } else {
+                                        completionInfo.listener.onFailure(
+                                                new IOException("RDMA SendIMM WR completed with error: " +
+                                                        IbvWC.IbvWcStatus.values()[ibvWCs[i].getStatus()].name()));
+                                    }
+
+                                    reclaimedSendPermits += completionInfo.sendPermitsToReclaim;
+                                } else if (wcSuccess) {
+                                    // Ignore the case of error, as the listener will be invoked by the last WC
+                                    logger.warn("Couldn't find CompletionInfo with index: " + recvWrId);
+                                }
+                            }
                         }
-                        int recvWrId = (int)ibvWCs[i].getWr_id();
-                        if (firstRecvWrIndex == -1) {
-                            firstRecvWrIndex = recvWrId;
-                        }
-                        reclaimedRecvWrs += 1;
                     } else {
                         logger.error(this + "Unexpected opcode in PollCQ: " + ibvWCs[i].getOpcode());
                     }
@@ -1022,7 +1060,7 @@ public class RdmaChannel {
         return false;
     }
 
-    void stop() throws InterruptedException, IOException {
+    public void stop() throws InterruptedException, IOException {
         if (!isStopped.getAndSet(true)) {
             logger.info("Stopping RdmaChannel " + this);
 

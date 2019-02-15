@@ -32,7 +32,7 @@ public class RdmaReadServer implements RdmaConnectListener {
 
         clientChannel.rdmaReceiveInQueue(new RdmaCompletionListener() {
             @Override
-            public void onSuccess(ByteBuffer buf) {
+            public void onSuccess(ByteBuffer buf, Integer IMM) {
                 logger.info("success excute receive request!");
                 try {
                     cyclicBarrier.await();
@@ -57,7 +57,7 @@ public class RdmaReadServer implements RdmaConnectListener {
         ByteBuffer readBuffer = readData.getByteBuffer();
         clientChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
-            public void onSuccess(ByteBuffer buf) {
+            public void onSuccess(ByteBuffer buf, Integer IMM) {
                 logger.info("RdmaReadServer receive msg from client: "+readBuffer.asCharBuffer().toString());
             }
 

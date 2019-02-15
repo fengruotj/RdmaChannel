@@ -371,7 +371,7 @@ public class RdmaNode {
     return futureTask;
   }
 
-  void stop() throws Exception {
+  public void stop() throws Exception {
     // Spawn simultaneous disconnect tasks to speed up tear-down
     LinkedList<FutureTask<Void>> futureTaskList = new LinkedList<>();
     for (InetSocketAddress inetSocketAddress: activeRdmaChannelMap.keySet()) {

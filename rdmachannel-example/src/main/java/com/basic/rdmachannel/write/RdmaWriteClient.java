@@ -47,7 +47,7 @@ public class RdmaWriteClient {
 
         rdmaChannel.rdmaReceiveInQueue(new RdmaCompletionListener() {
             @Override
-            public void onSuccess(ByteBuffer buf) {
+            public void onSuccess(ByteBuffer buf, Integer IMM) {
                 logger.info("success excute receive request!");
                 try {
                     cyclicBarrier.await();
@@ -70,7 +70,7 @@ public class RdmaWriteClient {
         int rlength = byteBuffer.getInt();
         rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
             @Override
-            public void onSuccess(ByteBuffer buf) {
+            public void onSuccess(ByteBuffer buf, Integer IMM) {
                 logger.info("success excute write request!");
             }
 

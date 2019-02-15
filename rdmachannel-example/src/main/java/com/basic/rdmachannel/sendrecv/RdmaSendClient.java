@@ -41,7 +41,7 @@ public class RdmaSendClient {
 
         rdmaChannel.rdmaSendInQueue(new RdmaCompletionListener() {
             @Override
-            public void onSuccess(ByteBuffer buf) {
+            public void onSuccess(ByteBuffer buf, Integer IMM) {
                 System.out.println("SEND Success!!!");
             }
 

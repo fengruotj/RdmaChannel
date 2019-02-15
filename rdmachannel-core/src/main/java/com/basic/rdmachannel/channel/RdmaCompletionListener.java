@@ -7,6 +7,6 @@ import java.util.EventListener;
  * Created by mastertj on 2018/8/23.
  */
 public interface RdmaCompletionListener extends EventListener {
-    void onSuccess(ByteBuffer buf);
+    void onSuccess(ByteBuffer buf,Integer imm);
     void onFailure(Throwable exception); // Must handle multiple calls
 }
