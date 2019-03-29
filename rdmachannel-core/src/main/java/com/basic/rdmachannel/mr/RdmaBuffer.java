@@ -34,6 +34,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RdmaBuffer {
   private static final Logger logger = LoggerFactory.getLogger(RdmaBuffer.class);
 
+  /**
+   * 注册的MemoryRegion(其中包括MemoryRegion的长度、起始地址、lkey和rkey)
+   */
   private IbvMr ibvMr;
   private final long address;
   private final int length;

@@ -34,6 +34,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * locate com.ibm.disni.channel
+ * Created by MasterTj on 2019/1/22.
+ * RDMABufferManager  用于申请RDMABuffer
+ */
 public class RdmaBufferManager {
   private class AllocatorStack {
     private final AtomicInteger totalAlloc = new AtomicInteger(0);
@@ -43,6 +48,10 @@ public class RdmaBufferManager {
     private long lastAccess;
     private final AtomicLong idleBuffersSize = new AtomicLong(0);
 
+    /**
+     * 设置需要分配的RDMABuffer的Length大小
+     * @param length
+     */
     private AllocatorStack(int length) {
       this.length = length;
     }
@@ -55,6 +64,11 @@ public class RdmaBufferManager {
       return preAllocs.get();
     }
 
+    /**
+     * 返回一个长度为Length的RdmaBuffer
+     * @return
+     * @throws IOException
+     */
     private RdmaBuffer get() throws IOException {
       lastAccess = System.nanoTime();
       RdmaBuffer rdmaBuffer = stack.pollFirst();
@@ -67,6 +81,10 @@ public class RdmaBufferManager {
       }
     }
 
+    /**
+     * 回收一个RdmaBuffer
+     * @param rdmaBuffer
+     */
     private void put(RdmaBuffer rdmaBuffer) {
       rdmaBuffer.clean();
       lastAccess = System.nanoTime();
@@ -74,6 +92,12 @@ public class RdmaBufferManager {
       idleBuffersSize.addAndGet(length);
     }
 
+
+    /**
+     * 预分配一定数量的RdmaBuffer
+     * @param numBuffers
+     * @throws IOException
+     */
     private void preallocate(int numBuffers) throws IOException {
       RdmaBuffer[] preAllocatedBuffers = RdmaBuffer.preAllocate(getPd(), length, numBuffers);
       for (int i = 0; i < numBuffers; i++) {
@@ -97,6 +121,9 @@ public class RdmaBufferManager {
 
   private final int minimumAllocationSize;
   private final AtomicBoolean startedCleanStacks = new AtomicBoolean(false);
+  /**
+   * 分配RdmaBufferStack的Map
+   */
   private final ConcurrentHashMap<Integer, AllocatorStack> allocStackMap =
     new ConcurrentHashMap<>();
   private IbvPd pd;
@@ -118,6 +145,7 @@ public class RdmaBufferManager {
 
   /**
    * Pre allocates specified number of buffers of particular size in a single MR.
+   * 预先分配一定数量的Buffers在一个特定大小的MR中
    * @throws IOException
    */
   public void preAllocate(int buffSize, int buffCount) throws IOException {
@@ -133,6 +161,12 @@ public class RdmaBufferManager {
     }
   }
 
+  /**
+   * 如果长度为Length的AllocatorStack存在则返回
+   * 如果长度为Length的AllocatorStack不存在则创建
+   * @param length
+   * @return
+   */
   private AllocatorStack getOrCreateAllocatorStack(int length) {
     AllocatorStack allocatorStack = allocStackMap.get(length);
     if (allocatorStack == null) {
@@ -143,6 +177,12 @@ public class RdmaBufferManager {
     return allocatorStack;
   }
 
+  /**
+   * 创建一个长度为length的AllocatorStack
+   * @param length
+   * @return
+   * @throws IOException
+   */
   public RdmaBuffer get(int length) throws IOException {
     // Round up length to the nearest power of two, or the minimum block size
     if (length < minimumAllocationSize) {
