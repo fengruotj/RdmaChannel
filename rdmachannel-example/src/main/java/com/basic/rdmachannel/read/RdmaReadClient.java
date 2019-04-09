@@ -18,17 +18,7 @@ public class RdmaReadClient {
     private static final Logger logger = LoggerFactory.getLogger(RdmaReadClient.class);
 
     public static void main(String[] args) throws Exception {
-        RdmaNode rdmaClient=new RdmaNode("10.10.0.24", true, new RdmaChannelConf(), RdmaChannel.RdmaChannelType.RDMA_READ_RESPONDER, new RdmaConnectListener() {
-            @Override
-            public void onSuccess(RdmaChannel rdmaChannel) {
-                logger.info("success connect");
-            }
-
-            @Override
-            public void onFailure(Throwable exception) {
-                exception.printStackTrace();
-            }
-        });
+        RdmaNode rdmaClient=new RdmaNode("10.10.0.24",1955, new RdmaChannelConf(), RdmaChannel.RdmaChannelType.RDMA_READ_RESPONDER);
 
         RdmaChannel rdmaChannel = rdmaClient.getRdmaChannel(new InetSocketAddress("10.10.0.25", 1955), true, RdmaChannel.RdmaChannelType.RDMA_READ_RESPONDER);
 

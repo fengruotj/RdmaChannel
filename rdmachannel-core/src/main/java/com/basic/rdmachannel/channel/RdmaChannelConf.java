@@ -37,8 +37,6 @@ public class RdmaChannelConf {
 
     private int portMaxRetries=16;
 
-    private int port=1955;
-
     private String cpuList ="";
 
     public boolean useOdp(IbvContext context) {
@@ -103,14 +101,6 @@ public class RdmaChannelConf {
 
     public int portMaxRetries() {
         return portMaxRetries;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
     }
 
     public String cpuList(){return cpuList;}

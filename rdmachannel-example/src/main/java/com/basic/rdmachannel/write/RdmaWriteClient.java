@@ -1,6 +1,9 @@
 package com.basic.rdmachannel.write;
 
-import com.basic.rdmachannel.channel.*;
+import com.basic.rdmachannel.channel.RdmaChannel;
+import com.basic.rdmachannel.channel.RdmaChannelConf;
+import com.basic.rdmachannel.channel.RdmaCompletionListener;
+import com.basic.rdmachannel.channel.RdmaNode;
 import com.basic.rdmachannel.mr.RdmaBuffer;
 import com.basic.rdmachannel.mr.RdmaBufferManager;
 import org.slf4j.Logger;
@@ -21,17 +24,7 @@ public class RdmaWriteClient {
     private static CyclicBarrier cyclicBarrier=new CyclicBarrier(2);
 
     public static void main(String[] args) throws Exception {
-        RdmaNode rdmaClient=new RdmaNode("10.10.0.24", true, new RdmaChannelConf(), RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR, new RdmaConnectListener() {
-            @Override
-            public void onSuccess(RdmaChannel rdmaChannel) {
-                logger.info("success connect");
-            }
-
-            @Override
-            public void onFailure(Throwable exception) {
-                exception.printStackTrace();
-            }
-        });
+        RdmaNode rdmaClient=new RdmaNode("10.10.0.24", 1955,new RdmaChannelConf(), RdmaChannel.RdmaChannelType.RDMA_WRITE_REQUESTOR);
 
         RdmaChannel rdmaChannel = rdmaClient.getRdmaChannel(new InetSocketAddress("10.10.0.25", 1955), true, RdmaChannel.RdmaChannelType.RDMA_READ_RESPONDER);
 

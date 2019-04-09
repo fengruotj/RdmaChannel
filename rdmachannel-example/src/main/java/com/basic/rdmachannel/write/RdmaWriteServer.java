@@ -22,7 +22,8 @@ public class RdmaWriteServer implements RdmaConnectListener {
     private static RdmaChannel clientChannel;
 
     public static void main(String[] args) throws Exception {
-        RdmaNode rdmaServer=new RdmaNode("10.10.0.25", false, new RdmaChannelConf() , RdmaChannel.RdmaChannelType.RDMA_WRITE_RESPONDER, new RdmaWriteServer());
+        RdmaNode rdmaServer=new RdmaNode("10.10.0.25",1955, new RdmaChannelConf() , RdmaChannel.RdmaChannelType.RDMA_WRITE_RESPONDER);
+        rdmaServer.bindConnectCompleteListener(new RdmaWriteServer());
 
         cyclicBarrier.await();
         cyclicBarrier.reset();

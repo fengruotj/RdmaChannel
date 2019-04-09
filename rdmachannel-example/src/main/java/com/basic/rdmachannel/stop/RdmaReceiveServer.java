@@ -21,7 +21,8 @@ public class RdmaReceiveServer implements RdmaConnectListener {
     private static RdmaChannel clientChannel;
 
     public static void main(String[] args) throws Exception {
-        RdmaNode rdmaServer=new RdmaNode("10.10.0.25", false, new RdmaChannelConf() , RdmaChannel.RdmaChannelType.RPC, new RdmaReceiveServer());
+        RdmaNode rdmaServer=new RdmaNode("10.10.0.25",1955, new RdmaChannelConf() , RdmaChannel.RdmaChannelType.RPC);
+        rdmaServer.bindConnectCompleteListener(new RdmaReceiveServer());
 
         countDownLatch.await();
         RdmaBufferManager rdmaBufferManager = rdmaServer.getRdmaBufferManager();

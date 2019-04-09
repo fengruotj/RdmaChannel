@@ -132,7 +132,7 @@ public class RdmaBufferManager {
   private static final ExecutorService executorService =
           ExecutorsServiceContext.getInstance();
 
-  public RdmaBufferManager(IbvPd pd, boolean isExecutor, RdmaChannelConf conf) throws IOException {
+  public RdmaBufferManager(IbvPd pd, RdmaChannelConf conf) throws IOException {
     this.pd = pd;
     this.minimumAllocationSize = Math.min(1024, MIN_BLOCK_SIZE);
     this.maxCacheSize = conf.maxBufferAllocationSize();
