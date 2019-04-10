@@ -4,6 +4,7 @@ package com.basic.rdmachannel.read;
 import com.basic.rdmachannel.channel.*;
 import com.basic.rdmachannel.mr.RdmaBuffer;
 import com.basic.rdmachannel.mr.RdmaBufferManager;
+import com.basic.rdmachannel.token.RegionToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,33 +30,13 @@ public class RdmaReadServer implements RdmaConnectListener {
         cyclicBarrier.await();
         cyclicBarrier.reset();
         RdmaBufferManager rdmaBufferManager = rdmaServer.getRdmaBufferManager();
-        RdmaBuffer rdmaBuffer = rdmaBufferManager.get(1024);
-        ByteBuffer byteBuffer = rdmaBuffer.getByteBuffer();
+        RegionToken remoteRegionToken = rdmaServer.getRemoteRegionToken(clientChannel);
 
-        clientChannel.rdmaReceiveInQueue(new RdmaCompletionListener() {
-            @Override
-            public void onSuccess(ByteBuffer buf, Integer IMM) {
-                logger.info("success excute receive request!");
-                try {
-                    cyclicBarrier.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (BrokenBarrierException e) {
-                    e.printStackTrace();
-                }
-            }
+        int sizeInBytes=remoteRegionToken.getSizeInBytes();
+        long remoteAddress=remoteRegionToken.getAddress();
+        int rkey=remoteRegionToken.getLocalKey();//remote的LocalKey
 
-            @Override
-            public void onFailure(Throwable exception) {
-
-            }
-        },rdmaBuffer.getAddress(),rdmaBuffer.getLength(),rdmaBuffer.getLkey());
-
-        cyclicBarrier.await();
-        long remoteAddress = byteBuffer.getLong();
-        int rkey = byteBuffer.getInt();
-        int rlength = byteBuffer.getInt();
-        RdmaBuffer readData = rdmaBufferManager.get(rlength);
+        RdmaBuffer readData = rdmaBufferManager.get(sizeInBytes);
         ByteBuffer readBuffer = readData.getByteBuffer();
         clientChannel.rdmaReadInQueue(new RdmaCompletionListener() {
             @Override
@@ -67,7 +48,7 @@ public class RdmaReadServer implements RdmaConnectListener {
             public void onFailure(Throwable exception) {
                 exception.printStackTrace();
             }
-        },readData.getAddress(),readData.getLkey(),new int[]{rlength},new long[]{remoteAddress},new int[]{rkey});
+        },readData.getAddress(),readData.getLkey(),new int[]{sizeInBytes},new long[]{remoteAddress},new int[]{rkey});
         Thread.sleep(Integer.MAX_VALUE);
     }
 

@@ -17,6 +17,7 @@
 
 package com.basic.rdmachannel.mr;
 
+import com.basic.rdmachannel.token.RegionToken;
 import com.basic.rdmachannel.unsafe.Platform;
 import com.basic.rdmachannel.unsafe.memory.MemoryBlock;
 import com.basic.rdmachannel.unsafe.memory.UnsafeMemoryAllocator;
@@ -145,5 +146,9 @@ public class RdmaBuffer {
     } catch (Exception e) {
       throw new IOException("java.nio.DirectByteBuffer exception: " + e.toString());
     }
+  }
+
+  public RegionToken createRegionToken(){
+    return new RegionToken(length,address,ibvMr.getLkey(),ibvMr.getRkey());
   }
 }

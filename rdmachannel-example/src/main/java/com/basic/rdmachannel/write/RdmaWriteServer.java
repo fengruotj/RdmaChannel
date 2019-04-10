@@ -33,32 +33,7 @@ public class RdmaWriteServer implements RdmaConnectListener {
         RdmaBuffer rdmaData = rdmaBufferManager.get(4096);
         ByteBuffer dataBuffer = rdmaData.getByteBuffer();
 
-        RdmaBuffer rdmaSend = rdmaBufferManager.get(1024);
-        ByteBuffer sendBuffer = rdmaSend.getByteBuffer();
-        sendBuffer.putLong(rdmaData.getAddress());
-        sendBuffer.putInt(rdmaData.getLkey());
-        sendBuffer.putInt(rdmaData.getLength());
-
-        clientChannel.rdmaSendInQueue(new RdmaCompletionListener() {
-            @Override
-            public void onSuccess(ByteBuffer buf, Integer IMM) {
-                System.out.println("SEND Success!!!");
-                try {
-                    cyclicBarrier.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (BrokenBarrierException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable exception) {
-
-            }
-        },new long[]{rdmaSend.getAddress()},new int[]{rdmaSend.getLength()},new int[]{rdmaSend.getLkey()});
-
-        cyclicBarrier.await();
+        rdmaServer.sendRegionTokenToRemote(clientChannel,rdmaData.createRegionToken());
 
         Thread.sleep(5000);
         logger.info("RdmaWriteServer receive msg from client: "+dataBuffer.asCharBuffer().toString());

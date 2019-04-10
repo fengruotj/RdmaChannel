@@ -6,12 +6,12 @@ import com.basic.rdmachannel.channel.RdmaCompletionListener;
 import com.basic.rdmachannel.channel.RdmaNode;
 import com.basic.rdmachannel.mr.RdmaBuffer;
 import com.basic.rdmachannel.mr.RdmaBufferManager;
+import com.basic.rdmachannel.token.RegionToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 /**
@@ -29,8 +29,6 @@ public class RdmaWriteClient {
         RdmaChannel rdmaChannel = rdmaClient.getRdmaChannel(new InetSocketAddress("10.10.0.25", 1955), true, RdmaChannel.RdmaChannelType.RDMA_READ_RESPONDER);
 
         RdmaBufferManager rdmaBufferManager = rdmaClient.getRdmaBufferManager();
-        RdmaBuffer rdmaBuffer = rdmaBufferManager.get(1024);
-        ByteBuffer byteBuffer = rdmaBuffer.getByteBuffer();
 
         RdmaBuffer rdmaData = rdmaBufferManager.get(4096);
         ByteBuffer dataBuffer = rdmaData.getByteBuffer();
@@ -38,29 +36,12 @@ public class RdmaWriteClient {
         dataBuffer.asCharBuffer().put(str);
         dataBuffer.flip();
 
-        rdmaChannel.rdmaReceiveInQueue(new RdmaCompletionListener() {
-            @Override
-            public void onSuccess(ByteBuffer buf, Integer IMM) {
-                logger.info("success excute receive request!");
-                try {
-                    cyclicBarrier.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (BrokenBarrierException e) {
-                    e.printStackTrace();
-                }
-            }
+        RegionToken remoteRegionToken = rdmaClient.getRemoteRegionToken(rdmaChannel);
 
-            @Override
-            public void onFailure(Throwable exception) {
+        long remoteAddress = remoteRegionToken.getAddress();
+        int rkey = remoteRegionToken.getLocalKey();//remote的LocalKey
+        int sizeInBytes = remoteRegionToken.getSizeInBytes();
 
-            }
-        },rdmaBuffer.getAddress(),rdmaBuffer.getLength(),rdmaBuffer.getLkey());
-
-        cyclicBarrier.await();
-        long remoteAddress = byteBuffer.getLong();
-        int rkey = byteBuffer.getInt();
-        int rlength = byteBuffer.getInt();
         rdmaChannel.rdmaWriteInQueue(new RdmaCompletionListener() {
             @Override
             public void onSuccess(ByteBuffer buf, Integer IMM) {
@@ -71,7 +52,7 @@ public class RdmaWriteClient {
             public void onFailure(Throwable exception) {
 
             }
-        },rdmaData.getAddress(),rdmaData.getLength(),rdmaData.getLkey(),remoteAddress,rkey);
+        },rdmaData.getAddress(),sizeInBytes,rdmaData.getLkey(),remoteAddress,rkey);
 
         Thread.sleep(Integer.MAX_VALUE);
     }

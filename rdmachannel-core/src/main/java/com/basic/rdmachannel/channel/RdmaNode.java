@@ -17,7 +17,9 @@
 
 package com.basic.rdmachannel.channel;
 
+import com.basic.rdmachannel.mr.RdmaBuffer;
 import com.basic.rdmachannel.mr.RdmaBufferManager;
+import com.basic.rdmachannel.token.RegionToken;
 import com.ibm.disni.rdma.verbs.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,10 +27,12 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -296,6 +300,62 @@ public class RdmaNode {
   }
 
   public RdmaBufferManager getRdmaBufferManager() { return rdmaBufferManager; }
+
+  /**
+   * 发送RegionToke认证书给远程Remote RDMANode
+   * @param regionToken 内存区域认证书
+   */
+  public void sendRegionTokenToRemote(RdmaChannel rdmaChannel,RegionToken regionToken) throws IOException, InterruptedException {
+    RdmaBuffer rdmaSend = rdmaBufferManager.get(1024);
+    ByteBuffer sendBuffer = rdmaSend.getByteBuffer();
+    sendBuffer.putInt(regionToken.getSizeInBytes());
+    sendBuffer.putLong(regionToken.getAddress());
+    sendBuffer.putInt(regionToken.getLocalKey());
+    sendBuffer.putInt(regionToken.getRemoteKey());
+    CountDownLatch countDownLatch=new CountDownLatch(1);
+
+    rdmaChannel.rdmaSendInQueue(new RdmaCompletionListener() {
+      @Override
+      public void onSuccess(ByteBuffer buf, Integer IMM) {
+        System.out.println("SEND Success!!!");
+          countDownLatch.countDown();
+      }
+
+      @Override
+      public void onFailure(Throwable exception) {
+
+      }
+    },new long[]{rdmaSend.getAddress()},new int[]{rdmaSend.getLength()},new int[]{rdmaSend.getLkey()});
+
+    countDownLatch.await();
+  }
+
+  public RegionToken getRemoteRegionToken(RdmaChannel rdmaChannel) throws Exception {
+    RdmaBuffer rdmaBuffer = rdmaBufferManager.get(1024);
+    ByteBuffer byteBuffer = rdmaBuffer.getByteBuffer();
+
+    CountDownLatch countDownLatch=new CountDownLatch(1);
+
+    rdmaChannel.rdmaReceiveInQueue(new RdmaCompletionListener() {
+      @Override
+      public void onSuccess(ByteBuffer buf, Integer IMM) {
+        logger.info("success excute receive request!");
+        countDownLatch.countDown();
+      }
+
+      @Override
+      public void onFailure(Throwable exception) {
+
+      }
+    },rdmaBuffer.getAddress(),rdmaBuffer.getLength(),rdmaBuffer.getLkey());
+
+    countDownLatch.await();
+    int sizeInBytes=byteBuffer.getInt();
+    long address = byteBuffer.getLong();
+    int localKey = byteBuffer.getInt();
+    int remoteKey = byteBuffer.getInt();
+    return new RegionToken(sizeInBytes,address,localKey,remoteKey);
+  }
 
   public RdmaChannel getRdmaChannel(InetSocketAddress remoteAddr, boolean mustRetry,
                                     RdmaChannel.RdmaChannelType rdmaChannelType)

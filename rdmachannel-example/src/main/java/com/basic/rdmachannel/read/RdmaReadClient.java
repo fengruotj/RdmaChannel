@@ -29,23 +29,7 @@ public class RdmaReadClient {
         dataBuffer.asCharBuffer().put(str);
         dataBuffer.flip();
 
-        RdmaBuffer rdmaSend = rdmaBufferManager.get(1024);
-        ByteBuffer sendBuffer = rdmaSend.getByteBuffer();
-        sendBuffer.putLong(rdmaData.getAddress());
-        sendBuffer.putInt(rdmaData.getLkey());
-        sendBuffer.putInt(rdmaData.getLength());
-
-        rdmaChannel.rdmaSendInQueue(new RdmaCompletionListener() {
-            @Override
-            public void onSuccess(ByteBuffer buf, Integer IMM) {
-                System.out.println("SEND Success!!!");
-            }
-
-            @Override
-            public void onFailure(Throwable exception) {
-
-            }
-        },new long[]{rdmaSend.getAddress()},new int[]{rdmaSend.getLength()},new int[]{rdmaSend.getLkey()});
+        rdmaClient.sendRegionTokenToRemote(rdmaChannel,rdmaData.createRegionToken());
 
         Thread.sleep(Integer.MAX_VALUE);
     }
