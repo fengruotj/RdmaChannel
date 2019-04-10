@@ -7,6 +7,7 @@ import java.util.Enumeration;
 /**
  * locate com.basic.rdmachannel.util
  * Created by MasterTj on 2019/4/10.
+ * java -cp rdmachannel-core-1.0-SNAPSHOT-jar-with-dependencies com.basic.rdmachannel.util.RDMAUtils
  */
 public class RDMAUtils {
     public static InetAddress getLocalHostLANAddress(String ifaceName){
@@ -44,7 +45,7 @@ public class RDMAUtils {
     }
 
     public static void main(String[] args) {
-        InetAddress localHostLANAddress = RDMAUtils.getLocalHostLANAddress("net2");
+        InetAddress localHostLANAddress = RDMAUtils.getLocalHostLANAddress("ib0");
         System.out.println(localHostLANAddress);
     }
 }
