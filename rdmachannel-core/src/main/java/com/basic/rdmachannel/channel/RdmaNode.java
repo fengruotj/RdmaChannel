@@ -205,7 +205,7 @@ public class RdmaNode {
             } else {
               logger.info(" rdmaChannel finalizeConnection");
               rdmaChannel.finalizeConnection();
-              connectListener.onSuccess(rdmaChannel);
+              connectListener.onSuccess(inetSocketAddress,rdmaChannel);
             }
           } else if (eventType == RdmaCmEvent.EventType.RDMA_CM_EVENT_DISCONNECTED.ordinal()) {
             RdmaChannel rdmaChannel = passiveRdmaChannelMap.remove(inetSocketAddress);

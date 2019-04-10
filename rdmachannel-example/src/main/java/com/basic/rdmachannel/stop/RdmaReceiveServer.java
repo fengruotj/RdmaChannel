@@ -7,6 +7,7 @@ import com.basic.rdmachannel.mr.RdmaBufferManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 
@@ -49,7 +50,7 @@ public class RdmaReceiveServer implements RdmaConnectListener {
     }
 
     @Override
-    public void onSuccess(RdmaChannel rdmaChannel) {
+    public void onSuccess(InetSocketAddress inetSocketAddress, RdmaChannel rdmaChannel) {
         logger.info("success accept RdmaChannel");
         logger.info(rdmaChannel.toString());
         clientChannel=rdmaChannel;
