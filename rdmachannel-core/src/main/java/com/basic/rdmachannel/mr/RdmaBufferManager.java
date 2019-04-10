@@ -199,6 +199,17 @@ public class RdmaBufferManager {
     return getOrCreateAllocatorStack(length).get();
   }
 
+  /**
+   * 直接创建一个一定大小的RDMABuffer（不用RDMABufferManager管理）
+   * @param length RDMABuffer Length
+   * @return
+   * @throws IOException
+   */
+  public RdmaBuffer getDirect(int length) throws IOException {
+    // Round up length to the nearest power of two, or the minimum block size
+    return new RdmaBuffer(getPd(), length);
+  }
+
   public void put(RdmaBuffer buf) {
     AllocatorStack allocatorStack = allocStackMap.get(buf.getLength());
     if (allocatorStack == null) {
