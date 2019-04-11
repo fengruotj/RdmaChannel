@@ -453,7 +453,7 @@ public class RdmaChannel {
         svcPostRecvObject = qp.postRecv(recvWRList, null);
 
         svcPostRecvObject.execute();
-        logger.info("svcPostRecvObject execute");
+        logger.debug("svcPostRecvObject execute");
         svcPostRecvObject.free();
     }
 
