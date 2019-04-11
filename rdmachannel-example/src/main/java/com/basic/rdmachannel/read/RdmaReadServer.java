@@ -5,6 +5,7 @@ import com.basic.rdmachannel.channel.*;
 import com.basic.rdmachannel.mr.RdmaBuffer;
 import com.basic.rdmachannel.mr.RdmaBufferManager;
 import com.basic.rdmachannel.token.RegionToken;
+import com.basic.rdmachannel.util.RDMAUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,7 @@ import java.util.concurrent.CyclicBarrier;
 /**
  * locate com.ibm.disni.channel
  * Created by MasterTj on 2019/1/22.
+ * node25
  * java -cp rdmachannel-example-1.0-SNAPSHOT-jar-with-dependencies.jar com.basic.rdmachannel.read.RdmaReadServer
  */
 public class RdmaReadServer implements RdmaConnectListener {
@@ -24,7 +26,8 @@ public class RdmaReadServer implements RdmaConnectListener {
     private static RdmaChannel clientChannel;
 
     public static void main(String[] args) throws Exception {
-        RdmaNode rdmaServer=new RdmaNode("10.10.0.25",1955, new RdmaChannelConf() , RdmaChannel.RdmaChannelType.RDMA_READ_REQUESTOR);
+        String hostName = RDMAUtils.getLocalHostLANAddress("ib0").getHostName();
+        RdmaNode rdmaServer=new RdmaNode(hostName,1955, new RdmaChannelConf() , RdmaChannel.RdmaChannelType.RDMA_READ_REQUESTOR);
         rdmaServer.bindConnectCompleteListener(new RdmaReadServer());
 
         cyclicBarrier.await();

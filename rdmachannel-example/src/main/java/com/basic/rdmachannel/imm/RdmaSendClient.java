@@ -3,6 +3,7 @@ package com.basic.rdmachannel.imm;
 import com.basic.rdmachannel.channel.RdmaChannel;
 import com.basic.rdmachannel.channel.RdmaChannelConf;
 import com.basic.rdmachannel.channel.RdmaNode;
+import com.basic.rdmachannel.util.RDMAUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,8 @@ public class RdmaSendClient {
     private static final Logger logger = LoggerFactory.getLogger(RdmaSendClient.class);
 
     public static void main(String[] args) throws Exception {
-        RdmaNode rdmaClient=new RdmaNode("10.10.0.24", 1955,new RdmaChannelConf(), RdmaChannel.RdmaChannelType.RPC);
+        String hostName = RDMAUtils.getLocalHostLANAddress("ib0").getHostName();
+        RdmaNode rdmaClient=new RdmaNode(hostName, 1955,new RdmaChannelConf(), RdmaChannel.RdmaChannelType.RPC);
 
         RdmaChannel rdmaChannel = rdmaClient.getRdmaChannel(new InetSocketAddress("10.10.0.25", 1955), true, RdmaChannel.RdmaChannelType.RPC);
 

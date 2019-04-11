@@ -4,6 +4,7 @@ package com.basic.rdmachannel.stop;
 import com.basic.rdmachannel.channel.*;
 import com.basic.rdmachannel.mr.RdmaBuffer;
 import com.basic.rdmachannel.mr.RdmaBufferManager;
+import com.basic.rdmachannel.util.RDMAUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,8 @@ public class RdmaReceiveServer implements RdmaConnectListener {
     private static RdmaChannel clientChannel;
 
     public static void main(String[] args) throws Exception {
-        RdmaNode rdmaServer=new RdmaNode("10.10.0.25",1955, new RdmaChannelConf() , RdmaChannel.RdmaChannelType.RPC);
+        String hostName = RDMAUtils.getLocalHostLANAddress("ib0").getHostName();
+        RdmaNode rdmaServer=new RdmaNode(hostName,1955, new RdmaChannelConf() , RdmaChannel.RdmaChannelType.RPC);
         rdmaServer.bindConnectCompleteListener(new RdmaReceiveServer());
 
         countDownLatch.await();
