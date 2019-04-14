@@ -6,12 +6,14 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="disni" />
         <module name="rdmaChannel" />
         <module name="rdmachannel-core" />
         <module name="rdmachannel-example" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="disni" target="1.8" />
       <module name="RdmaChannel" target="1.8" />
       <module name="rdmaChannel" target="1.8" />
       <module name="rdmachannel-core" target="1.8" />

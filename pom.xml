@@ -11,6 +11,7 @@
   <modules>
     <module>rdmachannel-core</module>
     <module>rdmachannel-example</module>
+    <module>disni</module>
   </modules>
 
   <name>RdmaChannel</name>
