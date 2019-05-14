@@ -63,44 +63,88 @@ public class RdmaChannelConf {
         return swFlowControl;
     }
 
+    public void startSwFlowControl(boolean swFlowControl){
+        this.swFlowControl=swFlowControl;
+    }
+
     public int recvQueueDepth() {
         return recvQueueDepth;
+    }
+
+    public void setRecvQueueDepth(int recvQueueDepth){
+        this.recvQueueDepth=recvQueueDepth;
     }
 
     public int sendQueueDepth() {
         return sendQueueDepth;
     }
 
+    public void setSendQueueDepth(int sendQueueDepth) {
+        this.sendQueueDepth=sendQueueDepth;
+    }
+
     public int rdmaCmEventTimeout() {
         return rdmaCmEventTimeout;
+    }
+
+    public void setRdmaCmEventTimeout(int rdmaCmEventTimeout) {
+        this.rdmaCmEventTimeout=rdmaCmEventTimeout;
     }
 
     public int teardownListenTimeout() {
         return teardownListenTimeout;
     }
 
+    public void setTeardownListenTimeout(int teardownListenTimeout) {
+        this.teardownListenTimeout=teardownListenTimeout;
+    }
+
     public int resolvePathTimeout() {
         return resolvePathTimeout;
+    }
+
+    public void setResolvePathTimeout(int resolvePathTimeout) {
+        this.resolvePathTimeout=resolvePathTimeout;
     }
 
     public long maxBufferAllocationSize() {
         return maxBufferAllocationSize;
     }
 
+    public void setMaxBufferAllocationSize(int maxBufferAllocationSize) {
+        this.maxBufferAllocationSize=maxBufferAllocationSize;
+    }
+
     public long maxAggPrealloc() {
         return maxAggPrealloc;
+    }
+
+    public void setMaxAggPrealloc(int maxAggPrealloc) {
+        this.maxAggPrealloc=maxAggPrealloc;
     }
 
     public long maxAggBlock() {
         return maxAggBlock;
     }
 
+    public void setMaxAggBlock(int maxAggBlock) {
+        this.maxAggBlock=maxAggBlock;
+    }
+
     public int maxConnectionAttempts() {
         return maxConnectionAttempts;
     }
 
+    public void setMaxConnectionAttempts(int maxConnectionAttempts) {
+        this.maxConnectionAttempts=maxConnectionAttempts;
+    }
+
     public int portMaxRetries() {
         return portMaxRetries;
+    }
+
+    public void setPortMaxRetries(int portMaxRetries) {
+        this.portMaxRetries=portMaxRetries;
     }
 
     public String cpuList(){return cpuList;}
@@ -108,4 +152,5 @@ public class RdmaChannelConf {
     public  void setCpuList(String cpuList){
         this.cpuList=cpuList;
     }
+
 }
