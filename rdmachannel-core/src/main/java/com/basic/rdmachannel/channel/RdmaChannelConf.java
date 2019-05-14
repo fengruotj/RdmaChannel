@@ -63,7 +63,7 @@ public class RdmaChannelConf {
         return swFlowControl;
     }
 
-    public void startSwFlowControl(boolean swFlowControl){
+    public void setSwFlowControl(boolean swFlowControl){
         this.swFlowControl=swFlowControl;
     }
 
