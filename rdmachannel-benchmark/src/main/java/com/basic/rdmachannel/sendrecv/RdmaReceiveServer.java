@@ -75,7 +75,6 @@ public class RdmaReceiveServer implements RdmaConnectListener {
         }
 
         //close everything
-        clientChannel.stop();
         rdmaServer.stop();
     }
 

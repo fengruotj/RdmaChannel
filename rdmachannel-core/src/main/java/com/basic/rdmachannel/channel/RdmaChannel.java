@@ -361,6 +361,8 @@ public class RdmaChannel {
     }
 
     private void processRdmaCmEvent(int expectedEvent, int timeout) throws IOException {
+        if(eventChannel==null) return;
+
         RdmaCmEvent event = eventChannel.getCmEvent(timeout);
         if (event == null) {
             setRdmaChannelState(RdmaChannelState.ERROR);

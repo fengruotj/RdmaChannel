@@ -177,10 +177,10 @@ public class RdmaNode {
               continue;
             }
 
-            RdmaChannel previous = activeRdmaChannelMap.put(inetSocketAddress, rdmaChannel);
-            if (previous != null) {
-              previous.stop();
-            }
+//            RdmaChannel previous = activeRdmaChannelMap.put(inetSocketAddress, rdmaChannel);
+//            if (previous != null) {
+//              previous.stop();
+//            }
 
             try {
               rdmaChannel.accept();
@@ -442,6 +442,8 @@ public class RdmaNode {
   public void stop() throws Exception {
     // Spawn simultaneous disconnect tasks to speed up tear-down
     LinkedList<FutureTask<Void>> futureTaskList = new LinkedList<>();
+    logger.info("activeRdmaChannelMap"+activeRdmaChannelMap);
+    logger.info("passiveRdmaChannelMap"+passiveRdmaChannelMap);
     for (InetSocketAddress inetSocketAddress: activeRdmaChannelMap.keySet()) {
       final RdmaChannel rdmaChannel = activeRdmaChannelMap.remove(inetSocketAddress);
       futureTaskList.add(createFutureChannelStopTask(rdmaChannel));
