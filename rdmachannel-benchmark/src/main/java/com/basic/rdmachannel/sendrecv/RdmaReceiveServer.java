@@ -58,22 +58,26 @@ public class RdmaReceiveServer implements RdmaConnectListener {
         RdmaBuffer rdmaBuffer = rdmaBufferManager.get(size);
         ByteBuffer byteBuffer = rdmaBuffer.getByteBuffer();
         int opCount = 0;
+        CountDownLatch countDownLatch=new CountDownLatch(loop);
         while (opCount < loop){
             clientChannel.rdmaReceiveInQueue(new RdmaCompletionListener() {
                 @Override
                 public void onSuccess(ByteBuffer buf, Integer IMM) {
+                    countDownLatch.countDown();
                     //logger.info("success excute receive request!");
                     //logger.info("RdmaWriteServer receive msg from client: "+byteBuffer.asCharBuffer().toString());
                 }
 
                 @Override
                 public void onFailure(Throwable exception) {
-
+                    exception.printStackTrace();
+                    countDownLatch.countDown();
                 }
             },rdmaBuffer.getAddress(),rdmaBuffer.getLength(),rdmaBuffer.getLkey());
             opCount++;
         }
 
+        countDownLatch.await();
         //close everything
         rdmaServer.stop();
     }
