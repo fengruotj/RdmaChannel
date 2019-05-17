@@ -52,7 +52,9 @@ public class RdmaSendClient {
 
     private void run() throws Exception {
         String hostName = RDMAUtils.getLocalHostLANAddress("ib0").getHostName();
-        RdmaNode rdmaClient = new RdmaNode(hostName, port, new RdmaChannelConf(), RdmaChannel.RdmaChannelType.RPC);
+        RdmaChannelConf rdmaChannelConf = new RdmaChannelConf();
+        rdmaChannelConf.setOrderControl(true);
+        RdmaNode rdmaClient = new RdmaNode(hostName, port, rdmaChannelConf, RdmaChannel.RdmaChannelType.RPC);
 
         RdmaChannel rdmaChannel = rdmaClient.getRdmaChannel(new InetSocketAddress(host, port), true, RdmaChannel.RdmaChannelType.RPC);
 

@@ -50,7 +50,9 @@ public class RdmaReceiveServer implements RdmaConnectListener {
     }
 
     private void run() throws Exception {
-        RdmaNode rdmaServer=new RdmaNode(host, port, new RdmaChannelConf() , RdmaChannel.RdmaChannelType.RPC);
+        RdmaChannelConf rdmaChannelConf = new RdmaChannelConf();
+        rdmaChannelConf.setOrderControl(true);
+        RdmaNode rdmaServer=new RdmaNode(host, port, rdmaChannelConf , RdmaChannel.RdmaChannelType.RPC);
         rdmaServer.bindConnectCompleteListener(this);
 
         countDownLatch.await();

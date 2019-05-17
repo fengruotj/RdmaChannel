@@ -464,58 +464,79 @@ public class RdmaChannel {
             throw new IOException("QP is in error state, can't post new requests");
         }
 
-        if (sendBudgetSemaphore.tryAcquire(pendingSend.ibvSendWRList.size())) {
-            // Ordering is lost here since if there are credits avail they will be immediately utilized
-            // without fairness. We don't care about fairness, since Spark doesn't expect the requests to
-            // complete in a particular order
-            if (pendingSend.recvCreditsNeeded > 0 &&
-                    remoteRecvCredits != null &&
-                    !remoteRecvCredits.tryAcquire(pendingSend.recvCreditsNeeded)) {
+        if(conf.swOrderControl()) {
+            // Work Request Element consumption strict order guarantee
+            try {
+                sendBudgetSemaphore.acquire(pendingSend.ibvSendWRList.size());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                rdmaPostSendWRList(pendingSend.ibvSendWRList);
+            } catch (Exception e) {
+                if (remoteRecvCredits != null) {
+                    remoteRecvCredits.release(pendingSend.recvCreditsNeeded);
+                }
                 sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
                 sendWrQueue.add(pendingSend);
-            } else {
-                try {
-                    rdmaPostSendWRList(pendingSend.ibvSendWRList);
-                } catch (Exception e) {
-                    if (remoteRecvCredits != null) {
-                        remoteRecvCredits.release(pendingSend.recvCreditsNeeded);
-                    }
+                throw e;
+            }
+        }else {
+            // Work Request Element don't consumption strict order guarantee
+            if (sendBudgetSemaphore.tryAcquire(pendingSend.ibvSendWRList.size())) {
+                // Ordering is lost here since if there are credits avail they will be immediately utilized
+                // without fairness. We don't care about fairness, since Spark doesn't expect the requests to
+                // complete in a particular order
+                if (pendingSend.recvCreditsNeeded > 0 &&
+                        remoteRecvCredits != null &&
+                        !remoteRecvCredits.tryAcquire(pendingSend.recvCreditsNeeded)) {
                     sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
                     sendWrQueue.add(pendingSend);
-                    throw e;
-                }
-            }
-        } else {
-            if (!isWarnedOnSendOverSubscription) {
-                isWarnedOnSendOverSubscription = true;
-                logger.warn(this + " oversubscription detected. RDMA" +
-                        " send queue depth is too small. To improve performance, please set" +
-                        " spark.shuffle.rdma.sendQueueDepth to a higher value (current depth: " + sendDepth);
-            }
-            sendWrQueue.add(pendingSend);
-
-            // Try again, in case it is the only WR in the queue and there are no pending sends
-            if (sendBudgetSemaphore.tryAcquire(pendingSend.ibvSendWRList.size())) {
-                if (sendWrQueue.remove(pendingSend)) {
-                    if (pendingSend.recvCreditsNeeded > 0 &&
-                            remoteRecvCredits != null &&
-                            !remoteRecvCredits.tryAcquire(pendingSend.recvCreditsNeeded)) {
+                } else {
+                    try {
+                        rdmaPostSendWRList(pendingSend.ibvSendWRList);
+                    } catch (Exception e) {
+                        if (remoteRecvCredits != null) {
+                            remoteRecvCredits.release(pendingSend.recvCreditsNeeded);
+                        }
                         sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
                         sendWrQueue.add(pendingSend);
-                    } else {
-                        try {
-                            rdmaPostSendWRList(pendingSend.ibvSendWRList);
-                        } catch (Exception e) {
-                            if (remoteRecvCredits != null) {
-                                remoteRecvCredits.release(pendingSend.recvCreditsNeeded);
-                            }
+                        throw e;
+                    }
+                }
+            } else {
+                if (!isWarnedOnSendOverSubscription) {
+                    isWarnedOnSendOverSubscription = true;
+                    logger.warn(this + " oversubscription detected. RDMA" +
+                            " send queue depth is too small. To improve performance, please set" +
+                            " spark.shuffle.rdma.sendQueueDepth to a higher value (current depth: " + sendDepth);
+                }
+                sendWrQueue.add(pendingSend);
+
+                // Try again, in case it is the only WR in the queue and there are no pending sends
+                if (sendBudgetSemaphore.tryAcquire(pendingSend.ibvSendWRList.size())) {
+                    if (sendWrQueue.remove(pendingSend)) {
+                        if (pendingSend.recvCreditsNeeded > 0 &&
+                                remoteRecvCredits != null &&
+                                !remoteRecvCredits.tryAcquire(pendingSend.recvCreditsNeeded)) {
                             sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
                             sendWrQueue.add(pendingSend);
-                            throw e;
+                        } else {
+                            try {
+                                rdmaPostSendWRList(pendingSend.ibvSendWRList);
+                            } catch (Exception e) {
+                                if (remoteRecvCredits != null) {
+                                    remoteRecvCredits.release(pendingSend.recvCreditsNeeded);
+                                }
+                                sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
+                                sendWrQueue.add(pendingSend);
+                                throw e;
+                            }
                         }
+                    } else {
+                        sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
                     }
-                } else {
-                    sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
                 }
             }
         }
@@ -527,10 +548,14 @@ public class RdmaChannel {
             throw new IOException("QP is in error state, can't post new requests");
         }
 
-        if (recvBudgetSemaphore.tryAcquire(pendingReceive.ibvRecvWRList.size())) {
-            // Ordering is lost here since if there are credits avail they will be immediately utilized
-            // without fairness. We don't care about fairness, since Spark doesn't expect the requests to
-            // complete in a particular order
+        if(conf.swOrderControl()) {
+            // Work Request Element consumption strict order guarantee
+            try {
+                recvBudgetSemaphore.acquire(pendingReceive.ibvRecvWRList.size());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
             try {
                 rdmaPostRecvWRList(pendingReceive.ibvRecvWRList);
             } catch (Exception e) {
@@ -538,27 +563,41 @@ public class RdmaChannel {
                 recvWrQueue.add(pendingReceive);
                 throw e;
             }
-        } else {
-            if (!isWarnedOnSendOverSubscription) {
-                isWarnedOnSendOverSubscription = true;
-                logger.warn(this + " oversubscription detected. RDMA" +
-                        " send queue depth is too small. To improve performance, please set" +
-                        " spark.shuffle.rdma.sendQueueDepth to a higher value (current depth: " + sendDepth);
-            }
-            recvWrQueue.add(pendingReceive);
-
-            // Try again, in case it is the only WR in the queue and there are no pending sends
+        }else {
+            // Work Request Element don't consumption strict order guarantee
             if (recvBudgetSemaphore.tryAcquire(pendingReceive.ibvRecvWRList.size())) {
-                if (sendWrQueue.remove(pendingReceive)) {
-                    try {
-                        rdmaPostRecvWRList(pendingReceive.ibvRecvWRList);
-                    } catch (Exception e) {
-                        recvBudgetSemaphore.release(pendingReceive.ibvRecvWRList.size());
-                        recvWrQueue.add(pendingReceive);
-                        throw e;
-                    }
-                } else {
+                // Ordering is lost here since if there are credits avail they will be immediately utilized
+                // without fairness. We don't care about fairness, since Spark doesn't expect the requests to
+                // complete in a particular order
+                try {
+                    rdmaPostRecvWRList(pendingReceive.ibvRecvWRList);
+                } catch (Exception e) {
                     recvBudgetSemaphore.release(pendingReceive.ibvRecvWRList.size());
+                    recvWrQueue.add(pendingReceive);
+                    throw e;
+                }
+            } else {
+                if (!isWarnedOnSendOverSubscription) {
+                    isWarnedOnSendOverSubscription = true;
+                    logger.warn(this + " oversubscription detected. RDMA" +
+                            " send queue depth is too small. To improve performance, please set" +
+                            " spark.shuffle.rdma.sendQueueDepth to a higher value (current depth: " + sendDepth);
+                }
+                recvWrQueue.add(pendingReceive);
+
+                // Try again, in case it is the only WR in the queue and there are no pending sends
+                if (recvBudgetSemaphore.tryAcquire(pendingReceive.ibvRecvWRList.size())) {
+                    if (sendWrQueue.remove(pendingReceive)) {
+                        try {
+                            rdmaPostRecvWRList(pendingReceive.ibvRecvWRList);
+                        } catch (Exception e) {
+                            recvBudgetSemaphore.release(pendingReceive.ibvRecvWRList.size());
+                            recvWrQueue.add(pendingReceive);
+                            throw e;
+                        }
+                    } else {
+                        recvBudgetSemaphore.release(pendingReceive.ibvRecvWRList.size());
+                    }
                 }
             }
         }
@@ -940,99 +979,106 @@ public class RdmaChannel {
             }
         }
 
-        // Drain pending sends queue
-        while (sendBudgetSemaphore != null && !isStopped.get() && !isError()) {
-            PendingSend pendingSend = sendWrQueue.poll();
-            if (pendingSend != null) {
-                // If there are not enough available permits from
-                // this run AND from the semaphore, then it means that there are
-                // more completions coming and they will exhaust the queue later
-                if (pendingSend.ibvSendWRList.size() > reclaimedSendPermits) {
-                    if (!sendBudgetSemaphore.tryAcquire(
-                            pendingSend.ibvSendWRList.size() - reclaimedSendPermits)) {
-                        sendWrQueue.push(pendingSend);
-                        sendBudgetSemaphore.release(reclaimedSendPermits);
-                        break;
+        if(conf.swOrderControl()) {
+            // Work Request Element consumption strict order guarantee
+            sendBudgetSemaphore.release(reclaimedSendPermits);
+            recvBudgetSemaphore.release(reclaimedRecvWrs);
+        }else {
+            // Work Request Element don't consumption strict order guarantee
+            // Drain pending sends queue
+            while (sendBudgetSemaphore != null && !isStopped.get() && !isError()) {
+                PendingSend pendingSend = sendWrQueue.poll();
+                if (pendingSend != null) {
+                    // If there are not enough available permits from
+                    // this run AND from the semaphore, then it means that there are
+                    // more completions coming and they will exhaust the queue later
+                    if (pendingSend.ibvSendWRList.size() > reclaimedSendPermits) {
+                        if (!sendBudgetSemaphore.tryAcquire(
+                                pendingSend.ibvSendWRList.size() - reclaimedSendPermits)) {
+                            sendWrQueue.push(pendingSend);
+                            sendBudgetSemaphore.release(reclaimedSendPermits);
+                            break;
+                        } else {
+                            if (pendingSend.recvCreditsNeeded > 0 &&
+                                    remoteRecvCredits != null &&
+                                    !remoteRecvCredits.tryAcquire(pendingSend.recvCreditsNeeded)) {
+                                sendWrQueue.push(pendingSend);
+                                sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
+                                break;
+                            } else {
+                                reclaimedSendPermits = 0;
+                            }
+                        }
                     } else {
                         if (pendingSend.recvCreditsNeeded > 0 &&
                                 remoteRecvCredits != null &&
                                 !remoteRecvCredits.tryAcquire(pendingSend.recvCreditsNeeded)) {
                             sendWrQueue.push(pendingSend);
-                            sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size() );
+                            sendBudgetSemaphore.release(reclaimedSendPermits);
                             break;
                         } else {
-                            reclaimedSendPermits = 0;
+                            reclaimedSendPermits -= pendingSend.ibvSendWRList.size();
                         }
                     }
-                } else {
-                    if (pendingSend.recvCreditsNeeded > 0 &&
-                            remoteRecvCredits != null &&
-                            !remoteRecvCredits.tryAcquire(pendingSend.recvCreditsNeeded)) {
+
+                    try {
+                        rdmaPostSendWRList(pendingSend.ibvSendWRList);
+                    } catch (IOException e) {
+                        setRdmaChannelState(RdmaChannelState.ERROR);
+                        // reclaim the credit and put sendWRList back to the queue
+                        // however, the channel/QP is already broken and more actions
+                        // needed to be taken to recover
+                        reclaimedSendPermits += pendingSend.ibvSendWRList.size();
+                        if (remoteRecvCredits != null) {
+                            remoteRecvCredits.release(pendingSend.recvCreditsNeeded);
+                        }
                         sendWrQueue.push(pendingSend);
                         sendBudgetSemaphore.release(reclaimedSendPermits);
                         break;
-                    } else {
-                        reclaimedSendPermits -= pendingSend.ibvSendWRList.size();
                     }
-                }
-
-                try {
-                    rdmaPostSendWRList(pendingSend.ibvSendWRList);
-                } catch (IOException e) {
-                    setRdmaChannelState(RdmaChannelState.ERROR);
-                    // reclaim the credit and put sendWRList back to the queue
-                    // however, the channel/QP is already broken and more actions
-                    // needed to be taken to recover
-                    reclaimedSendPermits += pendingSend.ibvSendWRList.size();
-                    if (remoteRecvCredits != null) {
-                        remoteRecvCredits.release(pendingSend.recvCreditsNeeded);
-                    }
-                    sendWrQueue.push(pendingSend);
+                } else {
                     sendBudgetSemaphore.release(reclaimedSendPermits);
                     break;
                 }
-            } else {
-                sendBudgetSemaphore.release(reclaimedSendPermits);
-                break;
             }
-        }
 
-        // Drain pending recvs queue
-        while (recvBudgetSemaphore != null && !isStopped.get() && !isError()) {
-            PendingReceive pendingReceive = recvWrQueue.poll();
-            if (pendingReceive != null) {
-                // If there are not enough available permits from
-                // this run AND from the semaphore, then it means that there are
-                // more completions coming and they will exhaust the queue later
-                if (pendingReceive.ibvRecvWRList.size() > reclaimedRecvWrs) {
-                    if (!recvBudgetSemaphore.tryAcquire(
-                            pendingReceive.ibvRecvWRList.size() - reclaimedRecvWrs)) {
+            // Drain pending recvs queue
+            while (recvBudgetSemaphore != null && !isStopped.get() && !isError()) {
+                PendingReceive pendingReceive = recvWrQueue.poll();
+                if (pendingReceive != null) {
+                    // If there are not enough available permits from
+                    // this run AND from the semaphore, then it means that there are
+                    // more completions coming and they will exhaust the queue later
+                    if (pendingReceive.ibvRecvWRList.size() > reclaimedRecvWrs) {
+                        if (!recvBudgetSemaphore.tryAcquire(
+                                pendingReceive.ibvRecvWRList.size() - reclaimedRecvWrs)) {
+                            recvWrQueue.push(pendingReceive);
+                            recvBudgetSemaphore.release(reclaimedRecvWrs);
+                            break;
+                        } else {
+                            reclaimedRecvWrs = 0;
+                        }
+                    } else {
+                        reclaimedRecvWrs -= pendingReceive.ibvRecvWRList.size();
+                    }
+
+                    try {
+                        rdmaPostRecvWRList(pendingReceive.ibvRecvWRList);
+                    } catch (IOException e) {
+                        setRdmaChannelState(RdmaChannelState.ERROR);
+                        // reclaim the credit and put sendWRList back to the queue
+                        // however, the channel/QP is already broken and more actions
+                        // needed to be taken to recover
+                        reclaimedRecvWrs += pendingReceive.ibvRecvWRList.size();
+
                         recvWrQueue.push(pendingReceive);
                         recvBudgetSemaphore.release(reclaimedRecvWrs);
                         break;
-                    } else {
-                            reclaimedRecvWrs = 0;
-                        }
+                    }
                 } else {
-                    reclaimedRecvWrs -= pendingReceive.ibvRecvWRList.size();
-                }
-
-                try {
-                    rdmaPostRecvWRList(pendingReceive.ibvRecvWRList);
-                } catch (IOException e) {
-                    setRdmaChannelState(RdmaChannelState.ERROR);
-                    // reclaim the credit and put sendWRList back to the queue
-                    // however, the channel/QP is already broken and more actions
-                    // needed to be taken to recover
-                    reclaimedRecvWrs += pendingReceive.ibvRecvWRList.size();
-
-                    recvWrQueue.push(pendingReceive);
                     recvBudgetSemaphore.release(reclaimedRecvWrs);
                     break;
                 }
-            } else {
-                recvBudgetSemaphore.release(reclaimedRecvWrs);
-                break;
             }
         }
     }

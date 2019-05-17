@@ -17,6 +17,9 @@ public class RdmaChannelConf {
 
     private boolean swFlowControl=false;
 
+    //Is it strictly guaranteed that Work Request Element is consumed sequentially?
+    private boolean swOrderControl=true;
+
     private int recvQueueDepth=4096;
 
     private int sendQueueDepth=4096;
@@ -66,6 +69,15 @@ public class RdmaChannelConf {
     public void setSwFlowControl(boolean swFlowControl){
         this.swFlowControl=swFlowControl;
     }
+
+    public boolean swOrderControl() {
+        return swOrderControl;
+    }
+
+    public void setOrderControl(boolean swOrderControl){
+        this.swOrderControl=swOrderControl;
+    }
+
 
     public int recvQueueDepth() {
         return recvQueueDepth;
