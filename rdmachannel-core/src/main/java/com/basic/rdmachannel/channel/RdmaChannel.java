@@ -333,6 +333,10 @@ public class RdmaChannel {
         return (InetSocketAddress)cmId.getSource();
     }
 
+    InetSocketAddress getDestinationAddress() throws IOException {
+        return (InetSocketAddress)cmId.getDestination();
+    }
+
     public void accept() throws IOException {
         RdmaConnParam connParams = new RdmaConnParam();
 
@@ -1201,6 +1205,12 @@ public class RdmaChannel {
 
     @Override
     public String toString() {
-        return "RdmaChannel(" + id + ") ";
+        String str ="";
+        try {
+            str= "RdmaChannel(" + id + ") sourceSocketAddress: "+this.getSourceSocketAddress()+ " destinationAddress: "+this.getDestinationAddress();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return str;
     }
 }
