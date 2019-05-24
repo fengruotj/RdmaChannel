@@ -1203,6 +1203,9 @@ public class RdmaChannel {
     public boolean isConnected() { return rdmaChannelState.get() == RdmaChannelState.CONNECTED.ordinal(); }
     public boolean isError() { return rdmaChannelState.get() == RdmaChannelState.ERROR.ordinal(); }
 
+    public boolean isWritable(){
+        return sendBudgetSemaphore.availablePermits()>0;
+    }
     @Override
     public String toString() {
         String str ="";
