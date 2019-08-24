@@ -45,11 +45,13 @@ public class RdmaReadServer implements RdmaConnectListener {
             @Override
             public void onSuccess(ByteBuffer buf, Integer IMM) {
                 logger.info("RdmaReadServer receive msg from client: "+readBuffer.asCharBuffer().toString());
+                rdmaBufferManager.put(readData);
             }
 
             @Override
             public void onFailure(Throwable exception) {
                 exception.printStackTrace();
+                rdmaBufferManager.put(readData);
             }
         },readData.getAddress(),readData.getLkey(),new int[]{sizeInBytes},new long[]{remoteAddress},new int[]{rkey});
         Thread.sleep(Integer.MAX_VALUE);

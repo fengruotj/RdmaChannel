@@ -7,6 +7,6 @@ cd libdisni
  ./autoprepare.sh
 
 #3.configure 配置
-./configure --with-jdk=/opt/java/jdk1.8.0_151
+./configure --with-jdk=/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home
 4. 运行make 和install
 make && make install

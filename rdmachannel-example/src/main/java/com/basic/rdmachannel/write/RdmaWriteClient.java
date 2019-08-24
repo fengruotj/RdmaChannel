@@ -49,11 +49,12 @@ public class RdmaWriteClient {
             @Override
             public void onSuccess(ByteBuffer buf, Integer IMM) {
                 logger.info("success excute write request!");
+                rdmaBufferManager.put(rdmaData);
             }
 
             @Override
             public void onFailure(Throwable exception) {
-
+                rdmaBufferManager.put(rdmaData);
             }
         },rdmaData.getAddress(),sizeInBytes,rdmaData.getLkey(),remoteAddress,rkey);
 

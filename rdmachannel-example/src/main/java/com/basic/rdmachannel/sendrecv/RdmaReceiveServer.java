@@ -37,11 +37,12 @@ public class RdmaReceiveServer implements RdmaConnectListener {
             public void onSuccess(ByteBuffer buf, Integer IMM) {
                 logger.info("success excute receive request!");
                 logger.info("RdmaWriteServer receive msg from client: "+byteBuffer.asCharBuffer().toString());
+                rdmaBufferManager.put(rdmaBuffer);
             }
 
             @Override
             public void onFailure(Throwable exception) {
-
+                rdmaBufferManager.put(rdmaBuffer);
             }
         },rdmaBuffer.getAddress(),rdmaBuffer.getLength(),rdmaBuffer.getLkey());
 

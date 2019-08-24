@@ -38,11 +38,12 @@ public class RdmaSendClient {
             @Override
             public void onSuccess(ByteBuffer buf, Integer IMM) {
                 System.out.println("SEND Success!!!");
+                rdmaBufferManager.put(rdmaBuffer);
             }
 
             @Override
             public void onFailure(Throwable exception) {
-
+                rdmaBufferManager.put(rdmaBuffer);
             }
         },new long[]{rdmaBuffer.getAddress()},new int[]{rdmaBuffer.getLength()},new int[]{rdmaBuffer.getLkey()});
 
