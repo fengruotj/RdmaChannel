@@ -42,6 +42,7 @@ public class VerbsServer {
 		System.out.println("VerbsServer::starting...");
 
 		//create a communication channel for receiving CM events
+		//1.创建一个RDMA的Channel 通信通道为了接收RDMA 通信事件
 		RdmaEventChannel cmChannel = RdmaEventChannel.createEventChannel();
 		if (cmChannel == null){
 			System.out.println("VerbsServer::CM channel null");
@@ -49,12 +50,14 @@ public class VerbsServer {
 		}
 
 		//create a RdmaCmId for the server
+		//2.创建一个RDMA 通信ID 为了client 每一个clinet就是一个RDMA client
 		RdmaCmId idPriv = cmChannel.createId(RdmaCm.RDMA_PS_TCP);
 		if (idPriv == null){
 			System.out.println("idPriv null");
 			return;
 		}
 
+		// 3. 绑定IP地址和端口，监听Channel
 		InetAddress _src = InetAddress.getByName(ipAddress);
 		InetSocketAddress src = new InetSocketAddress(_src, port);
 		int ret = idPriv.bindAddr(src);
@@ -90,6 +93,7 @@ public class VerbsServer {
 		}
 
 		//get the device context of the new connection, typically the same as with the server id
+		//5.创建一个设备Context
 		IbvContext context = connId.getVerbs();
 		if (context == null){
 			System.out.println("VerbsServer::context null");
@@ -97,6 +101,7 @@ public class VerbsServer {
 		}
 
 		//create a new protection domain, we will use the pd later when registering memory
+		//6.创建一个保护域，用来注册内存Memory Region
 		IbvPd pd = context.allocPd();
 		if (pd == null){
 			System.out.println("VerbsServer::pd null");
@@ -185,6 +190,7 @@ public class VerbsServer {
 		LinkedList<IbvSendWR> wrList_send = new LinkedList<IbvSendWR>();
 
 		//let's preopare some work requests for sending
+		// 应用程序发送RDMA SEND请求到RNIC
 		IbvSge sgeSend = new IbvSge();
 		sgeSend.setAddr(sendMr.getAddr());
 		sgeSend.setLength(sendMr.getLength());
@@ -201,6 +207,7 @@ public class VerbsServer {
 		LinkedList<IbvRecvWR> wrList_recv = new LinkedList<IbvRecvWR>();
 
 		//let's prepare some work requests for receiving
+		// 应用程序发送RDMA RECEIVE请求到RNIC
 		IbvSge sgeRecv = new IbvSge();
 		sgeRecv.setAddr(recvMr.getAddr());
 		sgeRecv.setLength(recvMr.getLength());
@@ -217,10 +224,12 @@ public class VerbsServer {
 		commRdma.initSGRecv(wrList_recv);
 		System.out.println("VerbsServer::initiated recv, about to send stag info");
 		//post a send call, here we send a message which include the RDMA information of a data buffer
+		// 应用程序发送 RDMA SEND请求到Send Queue，同时等待Complete Queue中请求执行完成
 		commRdma.send(buffers, wrList_send, true, false);
 		System.out.println("VerbsServer::stag info sent");
 
 		//wait for the final message from the server
+		// 应用程序发送 RDMA RECEIVE请求到Receive Queue，同时等待Complete Queue中请求执行完成
 		commRdma.completeSGRecv(wrList_recv, false);
 
 		System.out.println("VerbsServer::done");

@@ -210,6 +210,7 @@ public class VerbsClient {
 		commRdma.initSGRecv(wrList_recv);
 
 		//let's wait for the first message to be received from the server
+		// 应用程序发送 RDMA RECEIVE请求到Receive Queue，同时等待Complete Queue中请求执行完成
 		commRdma.completeSGRecv(wrList_recv, false);
 
 		//here we go, it contains the RDMA information of a remote buffer
