@@ -29,6 +29,7 @@ public class RdmaSendClient {
         ByteBuffer byteBuffer = rdmaBuffer.getByteBuffer();
         String str="Hello! I am Client!";
         byteBuffer.asCharBuffer().put(str);
+
         byteBuffer.flip();
 
         rdmaChannel.rdmaSendInQueue(new RdmaCompletionListener() {

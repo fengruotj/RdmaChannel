@@ -187,15 +187,16 @@ public class RdmaBufferManager {
     // Round up length to the nearest power of two, or the minimum block size
     if (length < minimumAllocationSize) {
       length = minimumAllocationSize;
-    } else {
-      length--;
-      length |= length >> 1;
-      length |= length >> 2;
-      length |= length >> 4;
-      length |= length >> 8;
-      length |= length >> 16;
-      length++;
     }
+//    } else {
+//      length--;
+//      length |= length >> 1;
+//      length |= length >> 2;
+//      length |= length >> 4;
+//      length |= length >> 8;
+//      length |= length >> 16;
+//      length++;
+//    }
     return getOrCreateAllocatorStack(length).get();
   }
 
