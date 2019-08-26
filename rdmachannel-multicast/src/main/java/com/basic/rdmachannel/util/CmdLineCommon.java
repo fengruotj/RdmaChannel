@@ -26,7 +26,7 @@ public class CmdLineCommon {
 
 	private static final String LOOP_KEY = "k";
 	private int loop;
-	private static final int LOOP_DEFAULT = 1000;
+	private static final int LOOP_DEFAULT = 500;
 
 	private static final String NUMBER_KEY = "m";
 	private int num;

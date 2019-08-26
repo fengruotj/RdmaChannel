@@ -44,10 +44,11 @@ public class SequenceMulticastServer implements RdmaConnectListener {
         // wait all the rdma connections
         conectionCountDownLatch.await();
 
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(2);
+
         // start benchmark multicast
         int opCount = 0;
         long start = System.nanoTime();
-        CyclicBarrier cyclicBarrier = new CyclicBarrier(2);
         while (opCount < cmdLine.getLoop()) {
             for (int i = 0; i < channelList.size(); i++) {
                 cyclicBarrier.reset();
@@ -86,12 +87,13 @@ public class SequenceMulticastServer implements RdmaConnectListener {
         double iops = _ops / _seconds;
         System.out.println("iops " + iops);
         System.out.println("Bidirectional average latency: " + duration  / (1e6 * cmdLine.getLoop()) + " ms");
+
         //close everything
         rdmaServer.stop();
     }
 
     public void launch(String[] args) throws Exception {
-        this.cmdLine = new CmdLineCommon("SequenceMulticastServer");
+        this.cmdLine = new CmdLineCommon("ParallelMulticastServer");
 
         try {
             cmdLine.parse(args);
