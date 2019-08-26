@@ -7,6 +7,7 @@
       <module fileurl="file://$PROJECT_DIR$/rdmachannel-benchmark/rdmachannel-benchmark.iml" filepath="$PROJECT_DIR$/rdmachannel-benchmark/rdmachannel-benchmark.iml" />
       <module fileurl="file://$PROJECT_DIR$/rdmachannel-core/rdmachannel-core.iml" filepath="$PROJECT_DIR$/rdmachannel-core/rdmachannel-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/rdmachannel-example/rdmachannel-example.iml" filepath="$PROJECT_DIR$/rdmachannel-example/rdmachannel-example.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rdmachannel-multicast/rdmachannel-multicast.iml" filepath="$PROJECT_DIR$/rdmachannel-multicast/rdmachannel-multicast.iml" />
     </modules>
   </component>
 </project>

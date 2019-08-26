@@ -9,10 +9,11 @@
   <packaging>pom</packaging>
   <version>1.0-SNAPSHOT</version>
   <modules>
+    <module>disni</module>
     <module>rdmachannel-core</module>
     <module>rdmachannel-example</module>
-    <module>disni</module>
       <module>rdmachannel-benchmark</module>
+      <module>rdmachannel-multicast</module>
   </modules>
 
   <name>RdmaChannel</name>

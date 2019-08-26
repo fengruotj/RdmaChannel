@@ -11,6 +11,7 @@
         <module name="rdmachannel-benchmark" />
         <module name="rdmachannel-core" />
         <module name="rdmachannel-example" />
+        <module name="rdmachannel-multicast" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -18,8 +19,10 @@
       <module name="RdmaChannel" target="1.8" />
       <module name="rdmaChannel" target="1.8" />
       <module name="rdmachannel-benchmark" target="1.8" />
+      <module name="rdmachannel-broadcast" target="1.8" />
       <module name="rdmachannel-core" target="1.8" />
       <module name="rdmachannel-example" target="1.8" />
+      <module name="rdmachannel-multicast" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
