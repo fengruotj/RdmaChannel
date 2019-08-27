@@ -38,7 +38,7 @@ public class SequenceMulticastServer implements RdmaConnectListener {
         this.rdmaBufferManager= rdmaServer.getRdmaBufferManager();
 
         // data index transferSize
-        RdmaBuffer dataBuffer = rdmaBufferManager.get(cmdLine.getSize());
+        RdmaBuffer dataBuffer = rdmaBufferManager.getDirect(cmdLine.getSize());
         ByteBuffer dataByteBuffer = dataBuffer.getByteBuffer();
 
         // wait all the rdma connections

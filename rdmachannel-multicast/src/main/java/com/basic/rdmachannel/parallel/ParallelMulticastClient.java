@@ -34,7 +34,7 @@ public class ParallelMulticastClient {
         RdmaChannel rdmaChannel = rdmaClient.getRdmaChannel(new InetSocketAddress(cmdLine.getIp(), cmdLine.getPort()), true, RdmaChannel.RdmaChannelType.RPC);
 
         // data index transferSize
-        RdmaBuffer dataBuffer = rdmaBufferManager.get(cmdLine.getSize());
+        RdmaBuffer dataBuffer = rdmaBufferManager.getDirect(cmdLine.getSize());
         ByteBuffer dataByteBuffer = dataBuffer.getByteBuffer();
 
         CountDownLatch countDownLatch=new CountDownLatch(cmdLine.getLoop());

@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * locate com.basic.rdmachannel.sequence
@@ -38,19 +38,18 @@ public class SequenceMulticastClient{
         RdmaBuffer dataBuffer = rdmaBufferManager.getDirect(cmdLine.getSize());
         ByteBuffer dataByteBuffer = dataBuffer.getByteBuffer();
 
-        CyclicBarrier cyclicBarrier = new CyclicBarrier(2);
+        CountDownLatch countDownLatch=new CountDownLatch(cmdLine.getLoop());
 
         // start benchmark multicast
         int opCount = 0;
         while (opCount < cmdLine.getLoop()) {
-            cyclicBarrier.reset();
             rdmaChannel.rdmaReceiveInQueue(new RdmaCompletionListener() {
                 @Override
                 public void onSuccess(ByteBuffer buf, Integer IMM) {
                     try {
                         logger.info("success excute receive request!");
                         //logger.info("RdmaWriteServer receive msg from client: "+dataByteBuffer.asCharBuffer().toString());
-                        cyclicBarrier.await();
+                        countDownLatch.countDown();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -60,15 +59,15 @@ public class SequenceMulticastClient{
                 public void onFailure(Throwable exception) {
                     try {
                         exception.printStackTrace();
-                        cyclicBarrier.await();
+                        countDownLatch.countDown();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
             }, dataBuffer.getAddress(), dataBuffer.getLength(), dataBuffer.getLkey());
-            cyclicBarrier.await();
             opCount++;
         }
+        countDownLatch.await();
 
         //close everything
         rdmaChannel.stop();
