@@ -13,16 +13,16 @@ import java.util.Properties;
  */
 public class RdmaChannelConf {
     private static final Logger logger = LoggerFactory.getLogger(RdmaChannelConf.class);
-    private static Properties properties=new Properties();
+    private static Properties properties= new Properties();
 
-    private boolean swFlowControl=false;
+    private boolean swFlowControl= false;
 
     //Is it strictly guaranteed that Work Request Element is consumed sequentially?
-    private boolean swOrderControl=true;
+    private boolean swOrderControl= true;
 
-    private int recvQueueDepth=4096;
+    private int recvQueueDepth= 4096;
 
-    private int sendQueueDepth=4096;
+    private int sendQueueDepth= 4096;
 
     private int rdmaCmEventTimeout= 20000;
 
@@ -30,15 +30,15 @@ public class RdmaChannelConf {
 
     private int resolvePathTimeout= 2000;
 
-    private long maxBufferAllocationSize=10*1024*1024;
+    private long maxBufferAllocationSize= 10*1024*1024*1024;
 
-    private long maxAggPrealloc=0;
+    private long maxAggPrealloc= 0;
 
-    private long maxAggBlock=2*1024;
+    private long maxAggBlock= 2*1024*1024;
 
-    private int maxConnectionAttempts=5;
+    private int maxConnectionAttempts= 5;
 
-    private int portMaxRetries=16;
+    private int portMaxRetries= 16;
 
     private String cpuList ="";
 
