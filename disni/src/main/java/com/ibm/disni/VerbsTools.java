@@ -64,6 +64,8 @@ public class VerbsTools {
 			ByteBuffer buffer = fragments[i];
 			buffer.clear();
 		}
+		if(postSendCall!=null)
+			postSendCall.free();
 
 		postSendCall = getPostSendCall(wrList);
 		postSendCall.execute();
@@ -76,6 +78,8 @@ public class VerbsTools {
 
 	public boolean send(LinkedList<IbvSendWR> wrList, boolean signaled, boolean polling)
 			throws Exception {
+		if(postSendCall!=null)
+			postSendCall.free();
 
 		postSendCall = getPostSendCall(wrList);
 		postSendCall.execute();
@@ -90,6 +94,9 @@ public class VerbsTools {
 
 	public void initSGRecv(LinkedList<IbvRecvWR> wrList)
 			throws Exception {
+		if(postRecvCall != null)
+			postRecvCall.free();
+
 		postRecvCall = getPostRecvCall(wrList);
 		postRecvCall.execute();
 	}
@@ -103,7 +110,6 @@ public class VerbsTools {
 		int elementsRead = 0;
 
 		while (true) {
-			logger.info("-----------");
 			if (!polling){
 				reqNotifyCall = getReqNotifyCall();
 				reqNotifyCall.execute();
