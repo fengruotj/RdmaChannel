@@ -469,6 +469,7 @@ public class RdmaChannel {
         }
 
         if(conf.swOrderControl()) {
+            //TODO  Work Request Element consumption strict order guarantee and guarantee remoteRecvCredits
             // Work Request Element consumption strict order guarantee
             try {
                 sendBudgetSemaphore.acquire(pendingSend.ibvSendWRList.size());
@@ -479,9 +480,6 @@ public class RdmaChannel {
             try {
                 rdmaPostSendWRList(pendingSend.ibvSendWRList);
             } catch (Exception e) {
-                if (remoteRecvCredits != null) {
-                    remoteRecvCredits.release(pendingSend.recvCreditsNeeded);
-                }
                 sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
                 sendWrQueue.add(pendingSend);
                 throw e;
@@ -546,7 +544,6 @@ public class RdmaChannel {
         }
     }
 
-    // TODO rdmaPostWRListInQueue(PendingReceive pendingReceive)
     private void rdmaPostWRListInQueue(PendingReceive pendingReceive) throws IOException {
         if (isError() || isStopped.get()) {
             throw new IOException("QP is in error state, can't post new requests");
