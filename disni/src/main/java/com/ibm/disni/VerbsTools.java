@@ -64,8 +64,6 @@ public class VerbsTools {
 			ByteBuffer buffer = fragments[i];
 			buffer.clear();
 		}
-		if(postSendCall!=null)
-			postSendCall.free();
 
 		postSendCall = getPostSendCall(wrList);
 		postSendCall.execute();
@@ -78,8 +76,6 @@ public class VerbsTools {
 
 	public boolean send(LinkedList<IbvSendWR> wrList, boolean signaled, boolean polling)
 			throws Exception {
-		if(postSendCall!=null)
-			postSendCall.free();
 
 		postSendCall = getPostSendCall(wrList);
 		postSendCall.execute();
@@ -94,8 +90,6 @@ public class VerbsTools {
 
 	public void initSGRecv(LinkedList<IbvRecvWR> wrList)
 			throws Exception {
-		if(postRecvCall != null)
-			postRecvCall.free();
 
 		postRecvCall = getPostRecvCall(wrList);
 		postRecvCall.execute();
@@ -117,9 +111,11 @@ public class VerbsTools {
 
 			pollCqCall = getPollCqCall(1);
 			int res = pollCqCall.execute().getPolls();
+			logger.info("checkCq res : {}" ,res);
 			if (res < 0){
 				break;
 			} else if (res > 0){
+				logger.info("checkCq status : {}" ,wcList[0].getStatus());
 				if (wcList[0].getStatus() == IbvWC.IbvWcStatus.IBV_WC_SUCCESS.ordinal()){
 				} else {
 					break;
@@ -142,8 +138,15 @@ public class VerbsTools {
 				}
 			}
 		}
-		logger.info(" verbs checkCq : "+success);
+		logger.info("verbs checkCq : "+success);
 		return success;
+	}
+
+	public void free(){
+		if(postSendCall!=null) postSendCall.free();
+		if(postRecvCall!=null) postRecvCall.free();
+		if(pollCqCall!=null) pollCqCall.free();
+		if(reqNotifyCall!=null) reqNotifyCall.free();
 	}
 
 	private SVCPostSend getPostSendCall(LinkedList<IbvSendWR> wrList) throws Exception{
