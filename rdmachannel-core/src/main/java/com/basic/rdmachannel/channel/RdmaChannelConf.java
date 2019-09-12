@@ -30,11 +30,11 @@ public class RdmaChannelConf {
 
     private int resolvePathTimeout= 2000;
 
-    private long maxBufferAllocationSize= 10*1024*1024*1024;
+    private long maxBufferAllocationSize= 10*1024*1024*1024L;
 
-    private long maxAggPrealloc= 0;
+    private long maxAggPrealloc= 0L;
 
-    private long maxAggBlock= 2*1024*1024;
+    private long maxAggBlock= 2*1024*1024L;
 
     private int maxConnectionAttempts= 5;
 
