@@ -481,7 +481,6 @@ public class RdmaChannel {
                 rdmaPostSendWRList(pendingSend.ibvSendWRList);
             } catch (Exception e) {
                 sendBudgetSemaphore.release(pendingSend.ibvSendWRList.size());
-                sendWrQueue.add(pendingSend);
                 throw e;
             }
         }else {
@@ -561,7 +560,6 @@ public class RdmaChannel {
                 rdmaPostRecvWRList(pendingReceive.ibvRecvWRList);
             } catch (Exception e) {
                 recvBudgetSemaphore.release(pendingReceive.ibvRecvWRList.size());
-                recvWrQueue.add(pendingReceive);
                 throw e;
             }
         }else {
