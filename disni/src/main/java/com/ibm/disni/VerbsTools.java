@@ -27,11 +27,16 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class VerbsTools {
     private static final Logger logger = LoggerFactory.getLogger(VerbsTools.class);
+	private static final int MAX_ACK_COUNT = 4;
+	private static final int POLL_CQ_LIST_SIZE = 16;
 
 	public static boolean CachingON = false;
+
+	private int ackCounter = 0;
 
 	public static int MAX_SGE = 1;
 	public static int MAX_WR = 100;
@@ -40,11 +45,12 @@ public class VerbsTools {
 	private SVCPostRecv postRecvCall;
 	private SVCReqNotify reqNotifyCall;
 	private SVCPollCq pollCqCall;
-	private IbvWC[] wcList;
+	private IbvWC[] ibvWCs;
 
 	private IbvQP qp;
 	private IbvCompChannel compChannel;
 	private IbvCQ cq;
+	private final AtomicBoolean isStopped = new AtomicBoolean(false);
 
 	public VerbsTools(IbvContext context, IbvCompChannel compChannel, IbvQP qp, IbvCQ cq) {
 		this.postSendCall = null;
@@ -113,10 +119,18 @@ public class VerbsTools {
 			int res = pollCqCall.execute().getPolls();
 			logger.info("checkCq res : {}" ,res);
 			if (res < 0){
+				logger.error("PollCQ failed executing with res: " + res);
 				break;
 			} else if (res > 0){
-				logger.info("checkCq status : {}" ,wcList[0].getStatus());
-				if (wcList[0].getStatus() == IbvWC.IbvWcStatus.IBV_WC_SUCCESS.ordinal()){
+				for (int i = 0; i < res; i++) {
+					boolean wcSuccess = ibvWCs[i].getStatus() == IbvWC.IbvWcStatus.IBV_WC_SUCCESS.ordinal();
+					if (!wcSuccess) {
+						logger.error("Completion with error: " +
+								IbvWC.IbvWcStatus.values()[ibvWCs[i].getStatus()].name());
+					}
+				}
+
+				if (ibvWCs[0].getStatus() == IbvWC.IbvWcStatus.IBV_WC_SUCCESS.ordinal()){
 				} else {
 					break;
 				}
@@ -172,11 +186,11 @@ public class VerbsTools {
 
 	private SVCPollCq getPollCqCall(int size) throws Exception{
 		if (CachingON == false || pollCqCall == null || !pollCqCall.isValid()) {
-			wcList = new IbvWC[size];
+			ibvWCs = new IbvWC[size];
 			for (int i = 0; i < size; i++){
-				wcList[i] = new IbvWC();
+				ibvWCs[i] = new IbvWC();
 			}
-			pollCqCall = cq.poll(wcList, size);
+			pollCqCall = cq.poll(ibvWCs, size);
 		}
 		return pollCqCall;
 	}
