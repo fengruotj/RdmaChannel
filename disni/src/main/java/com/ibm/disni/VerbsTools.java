@@ -105,6 +105,11 @@ public class VerbsTools {
 		return checkCq(wrList.size(), polling);
 	}
 
+	public boolean completeSGSend(LinkedList<IbvSendWR> wrList, boolean polling) throws Exception {
+		return checkCq(wrList.size(), polling);
+	}
+
+
 	public boolean checkCq(int expectedElements, boolean polling) throws Exception{
 		boolean success = false;
 		int elementsRead = 0;
